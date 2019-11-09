@@ -1,23 +1,9 @@
 # -*- coding: utf-8 -*-
-#==========================================================
-#
-#  This prepare the hdf5 datasets of the DRIVE database
-#
-#============================================================
-
 import os
 import h5py
 import numpy as np
 from PIL import Image
 
-
-
-def write_hdf5(arr,outfile):
-  with h5py.File(outfile,"w") as f:
-    f.create_dataset("image", data=arr, dtype=arr.dtype)
-
-
-#------------Path of the images --------------------------------------------------------------
 #train
 original_imgs_train = "./DRIVE/training/images/"
 groundTruth_imgs_train = "./DRIVE/training/1st_manual/"
@@ -26,13 +12,16 @@ borderMasks_imgs_train = "./DRIVE/training/mask/"
 original_imgs_test = "./DRIVE/test/images/"
 groundTruth_imgs_test = "./DRIVE/test/1st_manual/"
 borderMasks_imgs_test = "./DRIVE/test/mask/"
-#---------------------------------------------------------------------------------------------
 
 Nimgs = 20
 channels = 3
 height = 584
 width = 565
 dataset_path = "./DRIVE_datasets_training_testing/"
+
+def write_hdf5(arr,outfile):
+  with h5py.File(outfile,"w") as f:
+    f.create_dataset("image", data=arr, dtype=arr.dtype)
 
 def get_datasets(imgs_dir,groundTruth_dir,borderMasks_dir,train_test="null"):
     imgs = np.empty((Nimgs,height,width,channels))
