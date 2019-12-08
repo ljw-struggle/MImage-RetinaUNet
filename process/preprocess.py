@@ -4,11 +4,9 @@ import h5py
 import numpy as np
 from PIL import Image
 
-#train
 original_imgs_train = "./DRIVE/training/images/"
 groundTruth_imgs_train = "./DRIVE/training/1st_manual/"
 borderMasks_imgs_train = "./DRIVE/training/mask/"
-#test
 original_imgs_test = "./DRIVE/test/images/"
 groundTruth_imgs_test = "./DRIVE/test/1st_manual/"
 borderMasks_imgs_test = "./DRIVE/test/mask/"
@@ -27,7 +25,7 @@ def get_datasets(imgs_dir,groundTruth_dir,borderMasks_dir,train_test="null"):
     imgs = np.empty((Nimgs,height,width,channels))
     groundTruth = np.empty((Nimgs,height,width))
     border_masks = np.empty((Nimgs,height,width))
-    for path, subdirs, files in os.walk(imgs_dir): #list all files, directories in the path
+    for files in os.walk(imgs_dir): #list all files, directories in the path
         for i in range(len(files)):
             #original
             print("original image: " +files[i])
