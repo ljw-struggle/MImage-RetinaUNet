@@ -402,4 +402,3 @@ def inside_FOV_DRIVE(i, x, y, DRIVE_masks):
         return True
     else:
         return False
-
