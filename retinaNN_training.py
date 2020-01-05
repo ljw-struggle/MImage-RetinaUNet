@@ -1,13 +1,4 @@
-###################################################
-#
-#   Script to:
-#   - Load the images and extract the patches
-#   - Define the neural network
-#   - define the training
-#
-##################################################
-
-
+# -*- coding: utf-8 -*-
 import numpy as np
 import configparser
 import os
@@ -18,15 +9,10 @@ from keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from keras import backend as K
 from keras.utils.vis_utils import plot_model as plot
 from keras.optimizers import SGD
-
 import sys
 sys.path.insert(0, './lib/')
-from utils.help_functions import *
-
-#function to obtain data for training/testing (validation)
+from utils.utils import *
 from utils.extract_patches import get_data_training
-
-
 
 #Define the neural network
 def get_unet(n_ch,patch_height,patch_width):

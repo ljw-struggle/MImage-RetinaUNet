@@ -3,9 +3,7 @@ import numpy as np
 import random
 import configparser
 
-from utils.help_functions import load_hdf5
-from utils.help_functions import visualize
-from utils.help_functions import group_images
+from utils.utils import *
 
 from utils.pre_processing import my_PreProc
 

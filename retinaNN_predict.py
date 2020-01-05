@@ -1,31 +1,18 @@
 # -*- coding: utf-8 -*-
-###################################################
-#
-#   Script to
-#   - Calculate prediction of the test dataset
-#   - Calculate the parameters to evaluate the prediction
-#
-##################################################
-
-#Python
+import sys
+sys.path.insert(0, './lib/')
 import numpy as np
 import configparser
 from matplotlib import pyplot as plt
-#Keras
 from keras.models import model_from_json
 from keras.models import Model
-#scikit learn
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import jaccard_similarity_score
 from sklearn.metrics import f1_score
-import sys
-sys.path.insert(0, './lib/')
-# help_functions.py
-from utils.help_functions import *
-# extract_patches.py
+from utils.utils import *
 from utils.extract_patches import recompone
 from utils.extract_patches import recompone_overlap
 from utils.extract_patches import paint_border
@@ -33,9 +20,7 @@ from utils.extract_patches import kill_border
 from utils.extract_patches import pred_only_FOV
 from utils.extract_patches import get_data_testing
 from utils.extract_patches import get_data_testing_overlap
-# pre_processing.py
 from utils.pre_processing import my_PreProc
-
 
 #========= CONFIG FILE TO READ FROM =======
 config = configparser.RawConfigParser()
@@ -77,8 +62,6 @@ average_mode = config.getboolean('testing settings', 'average_mode')
 # visualize(group_images(test_border_masks[0:20,:,:,:],5),'borders')#.show()
 # visualize(group_images(img_truth[0:20,:,:,:],5),'gtruth')#.show()
 
-
-
 #============ Load the data and divide in patches
 patches_imgs_test = None
 new_height = None
@@ -93,16 +76,14 @@ if average_mode == True:
         patch_height = patch_height,
         patch_width = patch_width,
         stride_height = stride_height,
-        stride_width = stride_width
-    )
+        stride_width = stride_width)
 else:
     patches_imgs_test, patches_masks_test = get_data_testing(
         DRIVE_test_imgs_original = DRIVE_test_imgs_original,  #original
         DRIVE_test_groudTruth = path_data + config.get('data paths', 'test_groundTruth'),  #masks
         Imgs_to_test = int(config.get('testing settings', 'full_images_to_test')),
         patch_height = patch_height,
-        patch_width = patch_width,
-    )
+        patch_width = patch_width)
 
 
 

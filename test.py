@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-###################################################
-#
-#   Script to execute the prediction
-#
-##################################################
-
 import os, sys
 import configparser
 

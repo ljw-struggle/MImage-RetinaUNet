@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-###################################################
-#
-#   Script to pre-process the original imgs
-#
-##################################################
-
-
 import numpy as np
 from PIL import Image
 import cv2
