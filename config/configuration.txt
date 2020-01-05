@@ -7,17 +7,13 @@ test_imgs_original = DRIVE_dataset_imgs_test.hdf5
 test_groundTruth = DRIVE_dataset_groundTruth_test.hdf5
 test_border_masks = DRIVE_dataset_borderMasks_test.hdf5
 
-
-
 [experiment name]
 name = test
-
 
 [data attributes]
 #Dimensions of the patches extracted from the full images
 patch_height = 48
 patch_width = 48
-
 
 [training settings]
 #number of total patches:
@@ -29,7 +25,6 @@ N_epochs = 20
 batch_size = 6
 #if running with nohup
 nohup = False
-
 
 [testing settings]
 #Choose the model to test: best==epoch with min loss, last==last epoch
