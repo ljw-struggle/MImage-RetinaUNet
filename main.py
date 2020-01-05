@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import numpy as np
+import random
 import configparser
 from model.unet_func import get_unet
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
@@ -13,19 +13,20 @@ from sklearn.metrics import jaccard_similarity_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_curve
 
-from utils.extract_patches import recompone
-from utils.extract_patches import recompone_overlap
-from utils.extract_patches import paint_border
-from utils.extract_patches import kill_border
-from utils.extract_patches import pred_only_FOV
-from utils.extract_patches import get_data_training
-from utils.extract_patches import get_data_testing
-from utils.extract_patches import get_data_testing_overlap
-from utils.pre_processing import my_PreProc
+from utils.loader import recompone
+from utils.loader import recompone_overlap
+from utils.loader import paint_border
+from utils.loader import kill_border
+from utils.loader import pred_only_FOV
+from utils.loader import get_data_training
+from utils.loader import get_data_testing
+from utils.loader import get_data_testing_overlap
+from utils.loader import my_PreProc
 from utils.utils import *
 
 from matplotlib import pyplot as plt
 
+random.seed(10)
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 
 def train():
