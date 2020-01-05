@@ -12,7 +12,7 @@ def write_hdf5(arr,outfile):
   with h5py.File(outfile,"w") as f:
     f.create_dataset("image", data=arr, dtype=arr.dtype)
 
-#convert RGB image in black and white
+# convert RGB image in black and white
 def rgb2gray(rgb):
     assert (len(rgb.shape)==4)  #4D arrays
     assert (rgb.shape[1]==3)
@@ -20,7 +20,7 @@ def rgb2gray(rgb):
     bn_imgs = np.reshape(bn_imgs,(rgb.shape[0],1,rgb.shape[2],rgb.shape[3]))
     return bn_imgs
 
-#group a set of images row per columns
+# group a set of images row per columns
 def group_images(data,per_row):
     assert data.shape[0]%per_row==0
     assert (data.shape[1]==1 or data.shape[1]==3)
@@ -36,8 +36,7 @@ def group_images(data,per_row):
         totimg = np.concatenate((totimg,all_stripe[i]),axis=0)
     return totimg
 
-
-#visualize image (as PIL image, NOT as matplotlib!)
+# visualize image (as PIL image, NOT as matplotlib!)
 def visualize(data,filename):
     assert (len(data.shape)==3) #height*width*channels
     img = None
@@ -50,8 +49,7 @@ def visualize(data,filename):
     img.save(filename + '.png')
     return img
 
-
-#prepare the mask in the right shape for the Unet
+# prepare the mask in the right shape for the Unet
 def masks_Unet(masks):
     assert (len(masks.shape)==4)  #4D arrays
     assert (masks.shape[1]==1 )  #check the channel is 1
@@ -68,7 +66,6 @@ def masks_Unet(masks):
                 new_masks[i,j,0]=0
                 new_masks[i,j,1]=1
     return new_masks
-
 
 def pred_to_imgs(pred, patch_height, patch_width, mode="original"):
     assert (len(pred.shape)==3)  #3D array: (Npatches,height*width,2)

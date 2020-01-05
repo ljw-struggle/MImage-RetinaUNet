@@ -2,12 +2,10 @@
 import os, sys
 import configparser
 
-
 #config file to read from
 config = configparser.RawConfigParser()
 config.readfp(open(r'./configuration.txt'))
 
-#===========================================
 #name of the experiment!!
 name_experiment = config.get('experiment name', 'name')
 nohup = config.getboolean('testing settings', 'nohup')   #std output on log file?
@@ -23,7 +21,6 @@ elif sys.platform=='win32':
     os.system('md ' + result_dir)
 else:
     os.system('mkdir -p ' + result_dir)
-
 
 # finally run the prediction
 if nohup:

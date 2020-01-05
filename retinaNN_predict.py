@@ -22,10 +22,9 @@ from utils.extract_patches import get_data_testing
 from utils.extract_patches import get_data_testing_overlap
 from utils.pre_processing import my_PreProc
 
-#========= CONFIG FILE TO READ FROM =======
 config = configparser.RawConfigParser()
 config.read('configuration.txt')
-#===========================================
+
 #run the training on invariant or local
 path_data = config.get('data paths', 'path_local')
 
@@ -53,7 +52,6 @@ Imgs_to_test = int(config.get('testing settings', 'full_images_to_test'))
 N_visual = int(config.get('testing settings', 'N_group_visual'))
 #====== average mode ===========
 average_mode = config.getboolean('testing settings', 'average_mode')
-
 
 # #ground truth
 # gtruth= path_data + config.get('data paths', 'test_groundTruth')
@@ -85,8 +83,6 @@ else:
         patch_height = patch_height,
         patch_width = patch_width)
 
-
-
 #================ Run the prediction of the patches ==================================
 best_last = config.get('testing settings', 'best_last')
 #Load the saved model
@@ -99,8 +95,6 @@ print(predictions.shape)
 
 #===== Convert the prediction arrays in corresponding images
 pred_patches = pred_to_imgs(predictions, patch_height, patch_width, "original")
-
-
 
 #========== Elaborate and visualize the predicted images ====================
 pred_imgs = None

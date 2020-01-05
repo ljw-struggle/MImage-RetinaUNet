@@ -5,7 +5,7 @@ import configparser
 #config file to read from
 config = configparser.RawConfigParser()
 config.readfp(open(r'./configuration.txt'))
-#===========================================
+
 #name of the experiment
 name_experiment = config.get('experiment name', 'name')
 nohup = config.getboolean('training settings', 'nohup')   #std output on log file?
@@ -27,7 +27,6 @@ if sys.platform=='win32':
     os.system('copy configuration.txt .\\' +name_experiment+'\\'+name_experiment+'_configuration.txt')
 else:
     os.system('cp configuration.txt ./' +name_experiment+'/'+name_experiment+'_configuration.txt')
-
 
 print(str(nohup)+'ljw')
 # run the experiment

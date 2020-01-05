@@ -2,16 +2,13 @@
 import numpy as np
 import random
 import configparser
-
 from utils.utils import *
-
 from utils.pre_processing import my_PreProc
 
-
-#To select the same images
+# To select the same images
 # random.seed(10)
 
-#Load the original data and return the extracted patches for training/testing
+# Load the original data and return the extracted patches for training/testing
 def get_data_training(DRIVE_train_imgs_original,
                       DRIVE_train_groudTruth,
                       patch_height,
@@ -21,7 +18,6 @@ def get_data_training(DRIVE_train_imgs_original,
     train_imgs_original = load_hdf5(DRIVE_train_imgs_original)
     train_masks = load_hdf5(DRIVE_train_groudTruth) #masks always the same
     # visualize(group_images(train_imgs_original[0:20,:,:,:],5),'imgs_train')#.show()  #check original imgs train
-
 
     train_imgs = my_PreProc(train_imgs_original)
     train_masks = train_masks/255.
@@ -48,8 +44,7 @@ def get_data_training(DRIVE_train_imgs_original,
 
     return patches_imgs_train, patches_masks_train#, patches_imgs_test, patches_masks_test
 
-
-#Load the original data and return the extracted patches for training/testing
+# Load the original data and return the extracted patches for training/testing
 def get_data_testing(DRIVE_test_imgs_original, DRIVE_test_groudTruth, Imgs_to_test, patch_height, patch_width):
     ### test
     test_imgs_original = load_hdf5(DRIVE_test_imgs_original)
@@ -85,9 +80,6 @@ def get_data_testing(DRIVE_test_imgs_original, DRIVE_test_groudTruth, Imgs_to_te
 
     return patches_imgs_test, patches_masks_test
 
-
-
-
 # Load the original data and return the extracted patches for testing
 # return the ground truth in its original shape
 def get_data_testing_overlap(DRIVE_test_imgs_original, DRIVE_test_groudTruth, Imgs_to_test, patch_height, patch_width, stride_height, stride_width):
@@ -121,7 +113,6 @@ def get_data_testing_overlap(DRIVE_test_imgs_original, DRIVE_test_groudTruth, Im
 
     return patches_imgs_test, test_imgs.shape[2], test_imgs.shape[3], test_masks
 
-
 #data consinstency check
 def data_consistency_check(imgs,masks):
     assert(len(imgs.shape)==len(masks.shape))
@@ -130,7 +121,6 @@ def data_consistency_check(imgs,masks):
     assert(imgs.shape[3]==masks.shape[3])
     assert(masks.shape[1]==1)
     assert(imgs.shape[1]==1 or imgs.shape[1]==3)
-
 
 #extract patches randomly in the full training images
 #  -- Inside OR in full image
@@ -169,7 +159,6 @@ def extract_random(full_imgs,full_masks, patch_h,patch_w, N_patches, inside=True
             k+=1  #per full_img
     return patches, patches_masks
 
-
 #check if the patch is fully contained in the FOV
 def is_patch_inside_FOV(x,y,img_w,img_h,patch_h):
     x_ = x - int(img_w/2) # origin (0,0) shifted to image center
@@ -180,7 +169,6 @@ def is_patch_inside_FOV(x,y,img_w,img_h,patch_h):
         return True
     else:
         return False
-
 
 #Divide all the full_imgs in pacthes
 def extract_ordered(full_imgs, patch_h, patch_w):
@@ -207,7 +195,6 @@ def extract_ordered(full_imgs, patch_h, patch_w):
                 iter_tot +=1   #total
     assert (iter_tot==N_patches_tot)
     return patches  #array with all the full_imgs divided in patches
-
 
 def paint_border_overlap(full_imgs, patch_h, patch_w, stride_h, stride_w):
     assert (len(full_imgs.shape)==4)  #4D arrays
@@ -258,7 +245,6 @@ def extract_ordered_overlap(full_imgs, patch_h, patch_w,stride_h,stride_w):
     assert (iter_tot==N_patches_tot)
     return patches  #array with all the full_imgs divided in patches
 
-
 def recompone_overlap(preds, img_h, img_w, stride_h, stride_w):
     assert (len(preds.shape)==4)  #4D arrays
     assert (preds.shape[1]==1 or preds.shape[1]==3)  #check the channel is 1 or 3
@@ -291,7 +277,6 @@ def recompone_overlap(preds, img_h, img_w, stride_h, stride_w):
     assert(np.min(final_avg)>=0.0) #min value for a pixel is 0.0
     return final_avg
 
-
 #Recompone the full images with the patches
 def recompone(data,N_h,N_w):
     assert (data.shape[1]==1 or data.shape[1]==3)  #check the channel is 1 or 3
@@ -318,7 +303,6 @@ def recompone(data,N_h,N_w):
     assert (k==N_full_imgs)
     return full_recomp
 
-
 #Extend the full images because patch divison is not exact
 def paint_border(data,patch_h,patch_w):
     assert (len(data.shape)==4)  #4D arrays
@@ -338,7 +322,6 @@ def paint_border(data,patch_h,patch_w):
     new_data = np.zeros((data.shape[0],data.shape[1],new_img_h,new_img_w))
     new_data[:,:,0:img_h,0:img_w] = data[:,:,:,:]
     return new_data
-
 
 #return only the pixels contained in the FOV, for both images and masks
 def pred_only_FOV(data_imgs,data_masks,original_imgs_border_masks):
@@ -373,15 +356,12 @@ def kill_border(data, original_imgs_border_masks):
                 if inside_FOV_DRIVE(i,x,y,original_imgs_border_masks)==False:
                     data[i,:,y,x]=0.0
 
-
 def inside_FOV_DRIVE(i, x, y, DRIVE_masks):
     assert (len(DRIVE_masks.shape)==4)  #4D arrays
     assert (DRIVE_masks.shape[1]==1)  #DRIVE masks is black and white
     # DRIVE_masks = DRIVE_masks/255.  #NOOO!! otherwise with float numbers takes forever!!
-
     if (x >= DRIVE_masks.shape[3] or y >= DRIVE_masks.shape[2]): #my image bigger than the original
         return False
-
     if (DRIVE_masks[i,0,y,x]>0):  #0==black pixels
         # print DRIVE_masks[i,0,y,x]  #verify it is working right
         return True
