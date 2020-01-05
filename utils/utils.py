@@ -2,7 +2,6 @@
 import h5py
 import numpy as np
 from PIL import Image
-from matplotlib import pyplot as plt
 
 def load_hdf5(infile):
   with h5py.File(infile,"r") as f:  #"with" close the file after its nested commands

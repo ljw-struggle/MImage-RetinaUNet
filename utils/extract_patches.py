@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
-import numpy as np
 import random
-import configparser
 from utils.utils import *
 from utils.pre_processing import my_PreProc
-
-# To select the same images
-# random.seed(10)
+random.seed(10)
 
 # Load the original data and return the extracted patches for training/testing
 def get_data_training(DRIVE_train_imgs_original,
@@ -18,99 +14,76 @@ def get_data_training(DRIVE_train_imgs_original,
     train_imgs_original = load_hdf5(DRIVE_train_imgs_original)
     train_masks = load_hdf5(DRIVE_train_groudTruth) #masks always the same
     # visualize(group_images(train_imgs_original[0:20,:,:,:],5),'imgs_train')#.show()  #check original imgs train
-
     train_imgs = my_PreProc(train_imgs_original)
     train_masks = train_masks/255.
-
     train_imgs = train_imgs[:,:,9:574,:]  #cut bottom and top so now it is 565*565
     train_masks = train_masks[:,:,9:574,:]  #cut bottom and top so now it is 565*565
     data_consistency_check(train_imgs,train_masks)
-
     #check masks are within 0-1
     assert(np.min(train_masks)==0 and np.max(train_masks)==1)
-
     print("\ntrain images/masks shape:")
     print(train_imgs.shape)
     print("train images range (min-max): " +str(np.min(train_imgs)) +' - '+str(np.max(train_imgs)))
     print("train masks are within 0-1\n")
-
     #extract the TRAINING patches from the full images
     patches_imgs_train, patches_masks_train = extract_random(train_imgs,train_masks,patch_height,patch_width,N_subimgs,inside_FOV)
     data_consistency_check(patches_imgs_train, patches_masks_train)
-
     print("\ntrain PATCHES images/masks shape:")
     print(patches_imgs_train.shape)
     print("train PATCHES images range (min-max): " +str(np.min(patches_imgs_train)) +' - '+str(np.max(patches_imgs_train)))
-
     return patches_imgs_train, patches_masks_train#, patches_imgs_test, patches_masks_test
 
 # Load the original data and return the extracted patches for training/testing
 def get_data_testing(DRIVE_test_imgs_original, DRIVE_test_groudTruth, Imgs_to_test, patch_height, patch_width):
-    ### test
     test_imgs_original = load_hdf5(DRIVE_test_imgs_original)
     test_masks = load_hdf5(DRIVE_test_groudTruth)
-
     test_imgs = my_PreProc(test_imgs_original)
     test_masks = test_masks/255.
-
     #extend both images and masks so they can be divided exactly by the patches dimensions
     test_imgs = test_imgs[0:Imgs_to_test,:,:,:]
     test_masks = test_masks[0:Imgs_to_test,:,:,:]
     test_imgs = paint_border(test_imgs,patch_height,patch_width)
     test_masks = paint_border(test_masks,patch_height,patch_width)
-
     data_consistency_check(test_imgs, test_masks)
-
     #check masks are within 0-1
     assert(np.max(test_masks)==1  and np.min(test_masks)==0)
-
     print("\ntest images/masks shape:")
     print(test_imgs.shape)
     print("test images range (min-max): " +str(np.min(test_imgs)) +' - '+str(np.max(test_imgs)))
     print("test masks are within 0-1\n")
-
     #extract the TEST patches from the full images
     patches_imgs_test = extract_ordered(test_imgs,patch_height,patch_width)
     patches_masks_test = extract_ordered(test_masks,patch_height,patch_width)
     data_consistency_check(patches_imgs_test, patches_masks_test)
-
     print("\ntest PATCHES images/masks shape:")
     print(patches_imgs_test.shape)
     print("test PATCHES images range (min-max): " +str(np.min(patches_imgs_test)) +' - '+str(np.max(patches_imgs_test)))
-
     return patches_imgs_test, patches_masks_test
 
 # Load the original data and return the extracted patches for testing
 # return the ground truth in its original shape
 def get_data_testing_overlap(DRIVE_test_imgs_original, DRIVE_test_groudTruth, Imgs_to_test, patch_height, patch_width, stride_height, stride_width):
-    ### test
     test_imgs_original = load_hdf5(DRIVE_test_imgs_original)
     test_masks = load_hdf5(DRIVE_test_groudTruth)
-
     test_imgs = my_PreProc(test_imgs_original)
     test_masks = test_masks/255.
     #extend both images and masks so they can be divided exactly by the patches dimensions
     test_imgs = test_imgs[0:Imgs_to_test,:,:,:]
     test_masks = test_masks[0:Imgs_to_test,:,:,:]
     test_imgs = paint_border_overlap(test_imgs, patch_height, patch_width, stride_height, stride_width)
-
     #check masks are within 0-1
     assert(np.max(test_masks)==1  and np.min(test_masks)==0)
-
     print("\ntest images shape:")
     print(test_imgs.shape)
     print("\ntest mask shape:")
     print(test_masks.shape)
     print("test images range (min-max): " +str(np.min(test_imgs)) +' - '+str(np.max(test_imgs)))
     print("test masks are within 0-1\n")
-
     #extract the TEST patches from the full images
     patches_imgs_test = extract_ordered_overlap(test_imgs,patch_height,patch_width,stride_height,stride_width)
-
     print("\ntest PATCHES images shape:")
     print(patches_imgs_test.shape)
     print("test PATCHES images range (min-max): " +str(np.min(patches_imgs_test)) +' - '+str(np.max(patches_imgs_test)))
-
     return patches_imgs_test, test_imgs.shape[2], test_imgs.shape[3], test_masks
 
 #data consinstency check
@@ -185,7 +158,6 @@ def extract_ordered(full_imgs, patch_h, patch_w):
     print("number of patches per image: " +str(N_patches_h*N_patches_w))
     N_patches_tot = (N_patches_h*N_patches_w)*full_imgs.shape[0]
     patches = np.empty((N_patches_tot,full_imgs.shape[1],patch_h,patch_w))
-
     iter_tot = 0   #iter over the total number of patches (N_patches)
     for i in range(full_imgs.shape[0]):  #loop over the full images
         for h in range(N_patches_h):
@@ -261,7 +233,6 @@ def recompone_overlap(preds, img_h, img_w, stride_h, stride_w):
     print("According to the dimension inserted, there are " +str(N_full_imgs) +" full images (of " +str(img_h)+"x" +str(img_w) +" each)")
     full_prob = np.zeros((N_full_imgs,preds.shape[1],img_h,img_w))  #itialize to zero mega array with sum of Probabilities
     full_sum = np.zeros((N_full_imgs,preds.shape[1],img_h,img_w))
-
     k = 0 #iterator over all the patches
     for i in range(N_full_imgs):
         for h in range((img_h-patch_h)//stride_h+1):
