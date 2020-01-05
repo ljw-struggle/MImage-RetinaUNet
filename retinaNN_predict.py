@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import sys
-sys.path.insert(0, './lib/')
 import numpy as np
 import configparser
 from matplotlib import pyplot as plt
@@ -12,7 +10,6 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import jaccard_similarity_score
 from sklearn.metrics import f1_score
-from utils.utils import *
 from utils.extract_patches import recompone
 from utils.extract_patches import recompone_overlap
 from utils.extract_patches import paint_border
@@ -21,36 +18,37 @@ from utils.extract_patches import pred_only_FOV
 from utils.extract_patches import get_data_testing
 from utils.extract_patches import get_data_testing_overlap
 from utils.pre_processing import my_PreProc
+from utils.utils import *
 
 config = configparser.RawConfigParser()
 config.read('configuration.txt')
 
-#run the training on invariant or local
+# run the training on invariant or local
 path_data = config.get('data paths', 'path_local')
 
-#original test images (for FOV selection)
+# original test images (for FOV selection)
 DRIVE_test_imgs_original = path_data + config.get('data paths', 'test_imgs_original')
 test_imgs_orig = load_hdf5(DRIVE_test_imgs_original)
 full_img_height = test_imgs_orig.shape[2]
 full_img_width = test_imgs_orig.shape[3]
-#the border masks provided by the DRIVE
+# the border masks provided by the DRIVE
 DRIVE_test_border_masks = path_data + config.get('data paths', 'test_border_masks')
 test_border_masks = load_hdf5(DRIVE_test_border_masks)
 # dimension of the patches
 patch_height = int(config.get('data attributes', 'patch_height'))
 patch_width = int(config.get('data attributes', 'patch_width'))
-#the stride in case output with average
+# the stride in case output with average
 stride_height = int(config.get('testing settings', 'stride_height'))
 stride_width = int(config.get('testing settings', 'stride_width'))
 assert (stride_height < patch_height and stride_width < patch_width)
-#model name
+# model name
 name_experiment = config.get('experiment name', 'name')
 path_experiment = './' +name_experiment +'/'
-#N full images to be predicted
+# N full images to be predicted
 Imgs_to_test = int(config.get('testing settings', 'full_images_to_test'))
-#Grouping of the predicted images
+# Grouping of the predicted images
 N_visual = int(config.get('testing settings', 'N_group_visual'))
-#====== average mode ===========
+# average mode
 average_mode = config.getboolean('testing settings', 'average_mode')
 
 # #ground truth
@@ -60,7 +58,7 @@ average_mode = config.getboolean('testing settings', 'average_mode')
 # visualize(group_images(test_border_masks[0:20,:,:,:],5),'borders')#.show()
 # visualize(group_images(img_truth[0:20,:,:,:],5),'gtruth')#.show()
 
-#============ Load the data and divide in patches
+# Load the data and divide in patches
 patches_imgs_test = None
 new_height = None
 new_width = None
@@ -83,20 +81,20 @@ else:
         patch_height = patch_height,
         patch_width = patch_width)
 
-#================ Run the prediction of the patches ==================================
+# Run the prediction of the patches
 best_last = config.get('testing settings', 'best_last')
-#Load the saved model
+# Load the saved model
 model = model_from_json(open(path_experiment+name_experiment +'_architecture.json').read())
 model.load_weights(path_experiment+name_experiment + '_'+best_last+'_weights.h5')
-#Calculate the predictions
+# Calculate the predictions
 predictions = model.predict(patches_imgs_test, batch_size=32, verbose=2)
 print("predicted images size :")
 print(predictions.shape)
 
-#===== Convert the prediction arrays in corresponding images
+# Convert the prediction arrays in corresponding images
 pred_patches = pred_to_imgs(predictions, patch_height, patch_width, "original")
 
-#========== Elaborate and visualize the predicted images ====================
+# Elaborate and visualize the predicted images
 pred_imgs = None
 orig_imgs = None
 gtruth_masks = None
@@ -132,16 +130,15 @@ for i in range(int(N_predicted/group)):
     total_img = np.concatenate((orig_stripe,masks_stripe,pred_stripe),axis=0)
     visualize(total_img,path_experiment+name_experiment +"_Original_GroundTruth_Prediction"+str(i))#.show()
 
-
-#====== Evaluate the results
+# Evaluate the results
 print("\n\n========  Evaluate the results =======================")
-#predictions only inside the FOV
+# predictions only inside the FOV
 y_scores, y_true = pred_only_FOV(pred_imgs,gtruth_masks, test_border_masks)  #returns data only inside the FOV
 print("Calculating results only inside the FOV:")
 print("y scores pixels: " +str(y_scores.shape[0]) +" (radius 270: 270*270*3.14==228906), including background around retina: " +str(pred_imgs.shape[0]*pred_imgs.shape[2]*pred_imgs.shape[3]) +" (584*565==329960)")
 print("y true pixels: " +str(y_true.shape[0]) +" (radius 270: 270*270*3.14==228906), including background around retina: " +str(gtruth_masks.shape[2]*gtruth_masks.shape[3]*gtruth_masks.shape[0])+" (584*565==329960)")
 
-#Area under the ROC curve
+# Area under the ROC curve
 fpr, tpr, thresholds = roc_curve((y_true), y_scores)
 AUC_ROC = roc_auc_score(y_true, y_scores)
 # test_integral = np.trapz(tpr,fpr) #trapz is numpy integration
@@ -154,7 +151,7 @@ plt.ylabel("TPR (True Positive Rate)")
 plt.legend(loc="lower right")
 plt.savefig(path_experiment+"ROC.png")
 
-#Precision-recall curve
+# Precision-recall curve
 precision, recall, _ = precision_recall_curve(y_true, y_scores)
 precision = np.fliplr([precision])[0]  #so the array is increasing (you won't get negative AUC)
 recall = np.fliplr([recall])[0]  #so the array is increasing (you won't get negative AUC)
@@ -168,7 +165,7 @@ plt.ylabel("Precision")
 plt.legend(loc="lower right")
 plt.savefig(path_experiment+"Precision_recall.png")
 
-#Confusion matrix
+# Confusion matrix
 threshold_confusion = 0.5
 print("\nConfusion matrix:  Custom threshold (for positive) of " +str(threshold_confusion))
 y_pred = np.empty((y_scores.shape[0]))
@@ -196,15 +193,15 @@ if float(confusion[1,1]+confusion[0,1])!=0:
     precision = float(confusion[1,1])/float(confusion[1,1]+confusion[0,1])
 print("Precision: " +str(precision))
 
-#Jaccard similarity index
+# Jaccard similarity index
 jaccard_index = jaccard_similarity_score(y_true, y_pred, normalize=True)
 print("\nJaccard similarity score: " +str(jaccard_index))
 
-#F1 score
+# F1 score
 F1_score = f1_score(y_true, y_pred, labels=None, average='binary', sample_weight=None)
 print("\nF1 score (F-measure): " +str(F1_score))
 
-#Save the results
+# Save the results
 file_perf = open(path_experiment+'performances.txt', 'w')
 file_perf.write("Area under the ROC curve: "+str(AUC_ROC)
                 + "\nArea under Precision-Recall curve: " +str(AUC_prec_rec)
