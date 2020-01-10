@@ -29,6 +29,14 @@ from matplotlib import pyplot as plt
 random.seed(10)
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 
+def get_cofig():
+    config = configparser.RawConfigParser()
+    config.read('configuration.txt')
+    path_data = config.get('data paths', 'path_local')
+    name_experiment = config.get('experiment name', 'name')
+    N_epochs = int(config.get('training settings', 'N_epochs'))
+    batch_size = int(config.get('training settings', 'batch_size'))
+
 def train():
     config = configparser.RawConfigParser()
     config.read('configuration.txt')
