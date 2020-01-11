@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from sklearn.metrics import roc_auc_score, precision_recall_curve, \
-    confusion_matrix, jaccard_similarity_score, f1_score, roc_curve
+    confusion_matrix, jaccard_score, f1_score, roc_curve
 from matplotlib import pyplot as plt
 
 def plot_roc_curve(y_true, y_scores, path_experiment):
@@ -43,8 +43,8 @@ def evaluate_metric(y_true, y_score, path_experiment):
     y_pred[y_score>threshold_confusion] = 1
 
     confusion = confusion_matrix(y_true, y_pred)
-    jaccard_index = jaccard_similarity_score(y_true, y_pred, normalize=True)
-    F1_score = f1_score(y_true, y_pred, labels=None, average='binary', sample_weight=None)
+    jaccard_index = jaccard_score(y_true, y_pred)
+    f1_score_value = f1_score(y_true, y_pred, labels=None, average='binary', sample_weight=None)
     accuracy, specificity, sensitivity, precision = 0, 0, 0, 0
     if float(np.sum(confusion)) != 0:
         accuracy = float(confusion[0, 0] + confusion[1, 1]) / float(np.sum(confusion))
@@ -56,11 +56,11 @@ def evaluate_metric(y_true, y_score, path_experiment):
         precision = float(confusion[1, 1]) / float(confusion[1, 1] + confusion[0, 1])
 
     metric_str = 'Area under ROC curve: ' + str(AUROC) + '\n' + \
-                 'Area under PR curve: ' + str(AUPR) + '\n' + \
+                 'Area under PR curve: ' + str(AUPR) + '\n\n\n' + \
                  'For threshold: ' + str(threshold_confusion) + '\n' + \
                  'Confusion Matrix: ' + str(confusion) + '\n' + \
                  'Jaccard similarity score: ' + str(jaccard_index) + '\n' + \
-                 'F1 score (F-measure): ' + str(F1_score) + '\n\n' + \
+                 'F1 score (F-measure): ' + str(f1_score_value) + '\n' + \
                  'Accuracy: ' + str(accuracy) + '\n' + \
                  'Sensitivity: ' + str(sensitivity) + '\n' + \
                  'Specificity: ' + str(specificity) + '\n' + \

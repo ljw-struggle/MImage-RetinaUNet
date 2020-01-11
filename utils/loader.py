@@ -48,15 +48,15 @@ def get_data_testing_overlap(DRIVE_test_imgs_original, DRIVE_test_groudTruth, Im
     test_imgs = test_imgs[0:Imgs_to_test,:,:,:]
     test_masks = test_masks[0:Imgs_to_test,:,:,:]
     test_imgs = paint_border_overlap(test_imgs, patch_height, patch_width, stride_height, stride_width)
-    print("\ntest images shape:")
+    print('\ntest images shape:')
     print(test_imgs.shape)
-    print("\ntest mask shape:")
+    print('\ntest mask shape:')
     print(test_masks.shape)
-    print("test images range (min-max): " +str(np.min(test_imgs)) +' - '+str(np.max(test_imgs)))
+    print('test images range (min-max): ' +str(np.min(test_imgs)) +' - '+str(np.max(test_imgs)))
     patches_imgs_test = extract_ordered_overlap(test_imgs,patch_height,patch_width,stride_height,stride_width)
-    print("\ntest PATCHES images shape:")
+    print('\ntest PATCHES images shape:')
     print(patches_imgs_test.shape)
-    print("test PATCHES images range (min-max): " +str(np.min(patches_imgs_test)) +' - '+str(np.max(patches_imgs_test)))
+    print('test PATCHES images range (min-max): ' +str(np.min(patches_imgs_test)) +' - '+str(np.max(patches_imgs_test)))
     return patches_imgs_test, test_imgs.shape[2], test_imgs.shape[3], test_masks
 
 def my_PreProc(data):
@@ -100,9 +100,6 @@ def adjust_gamma(imgs, gamma=1.0):
     return new_imgs
 
 def extract_random(full_imgs,full_masks, patch_h,patch_w, N_patches, inside=True):
-    if (N_patches%full_imgs.shape[0] != 0):
-        print("N_patches: plase enter a multiple of 20")
-        exit()
     patches = np.empty((N_patches,full_imgs.shape[1],patch_h,patch_w))
     patches_masks = np.empty((N_patches,full_masks.shape[1],patch_h,patch_w))
     img_h = full_imgs.shape[2]  #height of the full image
@@ -132,10 +129,7 @@ def is_patch_inside_FOV(x,y,img_w,img_h,patch_h): #check if the patch is fully c
     y_ = y - int(img_h/2)  # origin (0,0) shifted to image center
     R_inside = 270 - int(patch_h * np.sqrt(2.0) / 2.0) #radius is 270 (from DRIVE db docs), minus the patch diagonal (assumed it is a square #this is the limit to contain the full patch in the FOV
     radius = np.sqrt((x_*x_)+(y_*y_))
-    if radius < R_inside:
-        return True
-    else:
-        return False
+    return True if radius < R_inside else False
 
 def extract_ordered(full_imgs, patch_h, patch_w):
     img_h = full_imgs.shape[2]  #height of the full image
@@ -156,7 +150,6 @@ def extract_ordered(full_imgs, patch_h, patch_w):
                 patch = full_imgs[i,:,h*patch_h:(h*patch_h)+patch_h,w*patch_w:(w*patch_w)+patch_w]
                 patches[iter_tot]=patch
                 iter_tot +=1   #total
-    assert (iter_tot==N_patches_tot)
     return patches  #array with all the full_imgs divided in patches
 
 def paint_border_overlap(full_imgs, patch_h, patch_w, stride_h, stride_w):

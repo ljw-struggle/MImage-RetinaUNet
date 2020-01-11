@@ -53,17 +53,16 @@ def test(config):
     test_imgs_orig = load_hdf5(DRIVE_test_imgs_original)
     full_img_height = test_imgs_orig.shape[2]
     full_img_width = test_imgs_orig.shape[3]
-    DRIVE_test_border_masks = config.get('data paths', 'test_border_mask')
+    DRIVE_test_border_masks = config.get('Data Attribute', 'test_border_mask')
     test_border_masks = load_hdf5(DRIVE_test_border_masks)
     patch_height = config.getint('Data Attribute', 'patch_height')
     patch_width = config.getint('Data Attribute', 'patch_width')
     patch_channel = config.getint('Data Attribute', 'num_channel')
-
     stride_height = config.getint('Test Setting', 'stride_height')
     stride_width = config.getint('Test Setting', 'stride_width')
     name_experiment = config.get('Experiment Name', 'name')
     path_experiment = './' + name_experiment + '/'
-    N_visual = int(config.get('Test Setting', 'N_group_visual'))
+    N_visual = config.getint('Test Setting', 'N_group_visual')
     average_mode = config.getboolean('Test Setting', 'average_mode')
     gtruth= config.get('Data Attribute', 'test_ground_truth')
     img_truth= load_hdf5(gtruth)
@@ -78,8 +77,8 @@ def test(config):
     if average_mode == True:
         patches_imgs_test, new_height, new_width, masks_test = get_data_testing_overlap(
             DRIVE_test_imgs_original=DRIVE_test_imgs_original,
-            DRIVE_test_groudTruth=config.get('data paths', 'test_groundTruth'),
-            Imgs_to_test=int(config.get('testing settings', 'full_images_to_test')),
+            DRIVE_test_groudTruth=config.get('Data Attribute', 'test_ground_truth'),
+            Imgs_to_test=20,
             patch_height=patch_height,
             patch_width=patch_width,
             stride_height=stride_height,
@@ -87,8 +86,8 @@ def test(config):
     else:
         patches_imgs_test, patches_masks_test = get_data_testing(
             DRIVE_test_imgs_original=DRIVE_test_imgs_original,
-            DRIVE_test_groudTruth=config.get('data paths', 'test_groundTruth'),
-            Imgs_to_test=int(config.get('testing settings', 'full_images_to_test')),
+            DRIVE_test_groudTruth=config.get('Data Attribute', 'test_ground_truth'),
+            Imgs_to_test=20,
             patch_height=patch_height,
             patch_width=patch_width)
 
@@ -101,7 +100,6 @@ def test(config):
     score = model.evaluate(patches_imgs_test, masks_Unet(patches_masks_test), verbose=0)
     print('Test score:', score[0], 'Test accuracy:', score[1])
 
-    # Convert the prediction arrays in corresponding images
     pred_patches = pred_to_imgs(predictions, patch_height, patch_width, 'original')
 
     # Elaborate and visualize the predicted images
