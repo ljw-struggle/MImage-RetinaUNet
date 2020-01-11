@@ -40,7 +40,7 @@ def evaluate_metric(y_true, y_score, path_experiment):
 
     threshold_confusion = 0.5
     y_pred = np.zeros((y_score.shape[0]))
-    y_pred[y_score>threshold_confusion]=1
+    y_pred[y_score>threshold_confusion] = 1
 
     confusion = confusion_matrix(y_true, y_pred)
     jaccard_index = jaccard_similarity_score(y_true, y_pred, normalize=True)

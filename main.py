@@ -71,7 +71,6 @@ def test(config):
     visualize(group_images(test_border_masks[0:20,:,:,:],5),'borders')#.show()
     visualize(group_images(img_truth[0:20,:,:,:],5),'gtruth')#.show()
 
-    # Load the data and divide in patches
     new_height = None
     new_width = None
     masks_test = None
@@ -93,12 +92,9 @@ def test(config):
             patch_height=patch_height,
             patch_width=patch_width)
 
-    # Run the prediction of the patches
     best_last = config.get('Test Setting', 'best_last')
-    # Load the saved model
     model = model_from_json(open(path_experiment + name_experiment + '_architecture.json').read())
     model.load_weights(path_experiment + name_experiment + '_' + best_last + '_weights.h5')
-    # Calculate the predictions
     predictions = model.predict(patches_imgs_test, batch_size=32, verbose=2)
     print('predicted images size :')
     print(predictions.shape)
@@ -119,16 +115,15 @@ def test(config):
         gtruth_masks = recompone(patches_masks_test, 13, 12)  # masks
     # Apply the DRIVE masks on the predictions  # set everything outside the FOV to zero!!
     kill_border(pred_imgs, test_border_masks)  # DRIVE MASK  #only for visualization
-    # Back to original dimensions
     orig_imgs = orig_imgs[:, :, 0:full_img_height, 0:full_img_width]
     pred_imgs = pred_imgs[:, :, 0:full_img_height, 0:full_img_width]
     gtruth_masks = gtruth_masks[:, :, 0:full_img_height, 0:full_img_width]
     print('Orig imgs shape: ' + str(orig_imgs.shape))
     print('pred imgs shape: ' + str(pred_imgs.shape))
     print('Gtruth imgs shape: ' + str(gtruth_masks.shape))
-    visualize(group_images(orig_imgs, N_visual), path_experiment + 'all_originals')  # .show()
-    visualize(group_images(pred_imgs, N_visual), path_experiment + 'all_predictions')  # .show()
-    visualize(group_images(gtruth_masks, N_visual), path_experiment + 'all_groundTruths')  # .show()
+    visualize(group_images(orig_imgs, N_visual), path_experiment + 'all_originals')
+    visualize(group_images(pred_imgs, N_visual), path_experiment + 'all_predictions')
+    visualize(group_images(gtruth_masks, N_visual), path_experiment + 'all_groundTruths')
 
     # Visualize results comparing mask and prediction
     N_predicted = orig_imgs.shape[0]
@@ -143,12 +138,10 @@ def test(config):
     # Evaluate the results
     y_score, y_true = pred_only_FOV(pred_imgs, gtruth_masks, test_border_masks)  # returns data only inside the FOV
     print('Calculating results only inside the FOV:')
-    print('y scores pixels: ' + str(
-        y_score.shape[0]) + ' (radius 270: 270*270*3.14==228906), including background around retina: ' + str(
-        pred_imgs.shape[0] * pred_imgs.shape[2] * pred_imgs.shape[3]) + ' (584*565==329960)')
-    print('y true pixels: ' + str(
-        y_true.shape[0]) + ' (radius 270: 270*270*3.14==228906), including background around retina: ' + str(
-        gtruth_masks.shape[2] * gtruth_masks.shape[3] * gtruth_masks.shape[0]) + ' (584*565==329960)')
+    print('y scores pixels: ' + str(y_score.shape[0]) + ' (radius 270: 270*270*3.14==228906), including background around retina: '
+          + str(pred_imgs.shape[0] * pred_imgs.shape[2] * pred_imgs.shape[3]) + ' (584*565==329960)')
+    print('y true pixels: ' + str(y_true.shape[0]) + ' (radius 270: 270*270*3.14==228906), including background around retina: '
+          + str(gtruth_masks.shape[2] * gtruth_masks.shape[3] * gtruth_masks.shape[0]) + ' (584*565==329960)')
     evaluate_metric(y_true, y_score, path_experiment)
 
 if __name__ == '__main__':
