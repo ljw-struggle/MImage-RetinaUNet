@@ -3,23 +3,14 @@ import os
 import h5py
 import numpy as np
 from PIL import Image
-
-preprocessed_dir = './data/DRIVE_preprocessed/'
-
-train_original_image_dir = './data/DRIVE/training/images/'
-train_ground_truth_dir = './data/DRIVE/training/1st_manual/'
-train_border_mask_dir = './data/DRIVE/training/mask/'
-test_original_image_dir = './data/DRIVE/test/images/'
-test_ground_truth_dir = './data/DRIVE/test/1st_manual/'
-test_border_mask_dir = './data/DRIVE/test/mask/'
-
-num_image, height, width, channel = 20, 584, 565, 3
+from tqdm import tqdm
 
 def write_hdf5(data, out_file):
     with h5py.File(out_file, 'w') as file:
         file.create_dataset('data', data=data, dtype=data.dtype)
 
 def get_data(original_image_dir, ground_truth_dir, border_mask_dir):
+    num_image, height, width, channel = 20, 584, 565, 3
     original_images = np.empty((num_image, height, width, channel))
     ground_truths = np.empty((num_image, height, width))
     border_masks = np.empty((num_image, height, width))
@@ -28,10 +19,10 @@ def get_data(original_image_dir, ground_truth_dir, border_mask_dir):
     _, _, ground_truth_paths = list(os.walk(ground_truth_dir))[0]
     _, _, border_mask_paths = list(os.walk(border_mask_dir))[0]
 
-    for i in range(len(original_image_paths)):
-        original_image = Image.open(original_image_paths[i])
-        ground_truth = Image.open(ground_truth_paths[i])
-        border_mask = Image.open(border_mask_paths[i])
+    for i in tqdm(range(len(original_image_paths)), ascii=True):
+        original_image = Image.open(original_image_dir + original_image_paths[i])
+        ground_truth = Image.open(ground_truth_dir + ground_truth_paths[i])
+        border_mask = Image.open(border_mask_dir + border_mask_paths[i])
         original_images[i] = np.asarray(original_image)
         ground_truths[i] = np.asarray(ground_truth)
         border_masks[i] = np.asarray(border_mask)
@@ -42,6 +33,14 @@ def get_data(original_image_dir, ground_truth_dir, border_mask_dir):
     return original_images, ground_truths, border_masks
 
 if __name__ == '__main__':
+    preprocessed_dir = './data/DRIVE_preprocessed/'
+    train_original_image_dir = './data/DRIVE/training/images/'
+    train_ground_truth_dir = './data/DRIVE/training/1st_manual/'
+    train_border_mask_dir = './data/DRIVE/training/mask/'
+    test_original_image_dir = './data/DRIVE/test/images/'
+    test_ground_truth_dir = './data/DRIVE/test/1st_manual/'
+    test_border_mask_dir = './data/DRIVE/test/mask/'
+
     # 1\ Make a dir to save preprocessed data.
     if not os.path.exists(preprocessed_dir):
         os.makedirs(preprocessed_dir)
