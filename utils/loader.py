@@ -67,15 +67,13 @@ def my_PreProc(data):
     train_imgs = train_imgs/255.
     return train_imgs
 
-# histogram equalization
-def histo_equalized(imgs):
+def histo_equalized(imgs): # histogram equalization
     imgs_equalized = np.empty(imgs.shape)
     for i in range(imgs.shape[0]):
         imgs_equalized[i,0] = cv2.equalizeHist(np.array(imgs[i,0], dtype = np.uint8))
     return imgs_equalized
 
-def clahe_equalized(imgs):
-    #create a CLAHE object (Arguments are optional).
+def clahe_equalized(imgs): #create a CLAHE object (Arguments are optional).
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
     imgs_equalized = np.empty(imgs.shape)
     for i in range(imgs.shape[0]):
@@ -129,8 +127,7 @@ def extract_random(full_imgs,full_masks, patch_h,patch_w, N_patches, inside=True
             k+=1  #per full_img
     return patches, patches_masks
 
-#check if the patch is fully contained in the FOV
-def is_patch_inside_FOV(x,y,img_w,img_h,patch_h):
+def is_patch_inside_FOV(x,y,img_w,img_h,patch_h): #check if the patch is fully contained in the FOV
     x_ = x - int(img_w/2) # origin (0,0) shifted to image center
     y_ = y - int(img_h/2)  # origin (0,0) shifted to image center
     R_inside = 270 - int(patch_h * np.sqrt(2.0) / 2.0) #radius is 270 (from DRIVE db docs), minus the patch diagonal (assumed it is a square #this is the limit to contain the full patch in the FOV
@@ -204,8 +201,7 @@ def extract_ordered_overlap(full_imgs, patch_h, patch_w,stride_h,stride_w):
                 iter_tot +=1   #total
     return patches  #array with all the full_imgs divided in patches
 
-#Extend the full images because patch divison is not exact
-def paint_border(data,patch_h,patch_w):
+def paint_border(data,patch_h,patch_w): #Extend the full images because patch divison is not exact
     img_h=data.shape[2]
     img_w=data.shape[3]
     if (img_h%patch_h)==0:
@@ -220,8 +216,7 @@ def paint_border(data,patch_h,patch_w):
     new_data[:,:,0:img_h,0:img_w] = data[:,:,:,:]
     return new_data
 
-#return only the pixels contained in the FOV, for both images and masks
-def pred_only_FOV(data_imgs,data_masks,original_imgs_border_masks):
+def pred_only_FOV(data_imgs,data_masks,original_imgs_border_masks): #return only the pixels contained in the FOV, for both images and masks
     height = data_imgs.shape[2]
     width = data_imgs.shape[3]
     new_pred_imgs = []
@@ -236,8 +231,7 @@ def pred_only_FOV(data_imgs,data_masks,original_imgs_border_masks):
     new_pred_masks = np.asarray(new_pred_masks)
     return new_pred_imgs, new_pred_masks
 
-#function to set to black everything outside the FOV, in a full image
-def kill_border(data, original_imgs_border_masks):
+def kill_border(data, original_imgs_border_masks): #function to set to black everything outside the FOV, in a full image
     height = data.shape[2]
     width = data.shape[3]
     for i in range(data.shape[0]):  #loop over the full images
