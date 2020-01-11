@@ -5,11 +5,11 @@ from PIL import Image
 
 def load_hdf5(in_file):
   with h5py.File(in_file, 'r') as f:
-    return f["image"][()]
+    return f['data'][()]
 
-def write_hdf5(arr, out_file):
+def write_hdf5(data, out_file):
   with h5py.File(out_file, 'w') as f:
-    f.create_dataset('image', data=arr, dtype=arr.dtype)
+    f.create_dataset('data', data=data, dtype=data.dtype)
 
 def rgb2gray(rgb):
     bn_imgs = rgb[:,0,:,:]*0.299 + rgb[:,1,:,:]*0.587 + rgb[:,2,:,:]*0.114

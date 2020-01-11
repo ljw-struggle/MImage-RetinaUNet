@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, concatenate, Conv2D, MaxPooling2D, UpSampling2D, Reshape, core, Dropout
-from tensorflow.keras.optimizers import Adam, SGD
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, UpSampling2D, \
+    Input, Concatenate, Reshape, Permute, Activation, Dropout
+from tensorflow.keras.optimizers import SGD
 
-# Define the neural network
-def get_unet(patch_height, patch_width, n_channel):
-    inputs = Input(shape=(patch_height, patch_width, n_channel))
+def get_unet_model(patch_height, patch_width, patch_channel):
+    inputs = Input(shape=(patch_height, patch_width, patch_channel))
     conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
     conv1 = Dropout(0.2)(conv1)
     conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv1)
@@ -19,19 +18,19 @@ def get_unet(patch_height, patch_width, n_channel):
     conv3 = Dropout(0.2)(conv3)
     conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
     up1 = UpSampling2D(size=(2, 2))(conv3)
-    up1 = concatenate([conv2,up1],axis=1)
+    up1 = Concatenate()([conv2,up1],axis=1)
     conv4 = Conv2D(64, (3, 3), activation='relu', padding='same')(up1)
     conv4 = Dropout(0.2)(conv4)
     conv4 = Conv2D(64, (3, 3), activation='relu', padding='same')(conv4)
     up2 = UpSampling2D(size=(2, 2))(conv4)
-    up2 = concatenate([conv1,up2], axis=1)
+    up2 = Concatenate()([conv1,up2], axis=1)
     conv5 = Conv2D(32, (3, 3), activation='relu', padding='same')(up2)
     conv5 = Dropout(0.2)(conv5)
     conv5 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv5)
     conv6 = Conv2D(2, (1, 1), activation='relu', padding='same')(conv5)
-    conv6 = core.Reshape((2, patch_height*patch_width))(conv6)
-    conv6 = core.Permute((2,1))(conv6)
-    conv7 = core.Activation('softmax')(conv6)
+    conv6 = Reshape((2, patch_height*patch_width))(conv6)
+    conv6 = Permute((2,1))(conv6)
+    conv7 = Activation('softmax')(conv6)
     model = Model(inputs=inputs, outputs=conv7)
     optimizer = SGD(lr=0.01, decay=1e-6, momentum=0.3, nesterov=False)
     model.compile(optimizer=optimizer, loss='categorical_crossentropy',metrics=['accuracy'])

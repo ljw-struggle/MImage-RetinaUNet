@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 def skeletonize():
     image=color.rgb2gray(data.horse())
-    image=1-image
+    image=1-image # Invert
     skeleton =morphology.skeletonize(image)
 
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(8, 4))
