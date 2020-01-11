@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
+import shutil
 import random
 import configparser
+import argparse
 from model.unet_func import get_unet
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from keras.utils.vis_utils import plot_model as plot
@@ -26,87 +28,69 @@ from utils.utils import *
 
 from matplotlib import pyplot as plt
 
-random.seed(10)
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
+random.seed(10)
 
-def get_cofig():
-    config = configparser.RawConfigParser()
-    config.read('configuration.txt')
-    path_data = config.get('data paths', 'path_local')
-    name_experiment = config.get('experiment name', 'name')
-    N_epochs = int(config.get('training settings', 'N_epochs'))
-    batch_size = int(config.get('training settings', 'batch_size'))
+shutil.copy('file', 'file_dir')
 
-def train():
-    config = configparser.RawConfigParser()
-    config.read('configuration.txt')
-    path_data = config.get('data paths', 'path_local')
-    name_experiment = config.get('experiment name', 'name')
-    N_epochs = int(config.get('training settings', 'N_epochs'))
-    batch_size = int(config.get('training settings', 'batch_size'))
+def train(config):
+    name_experiment = config.get('Experiment Name', 'name')
+    num_channel = 2
+    train_original_image = config.get('Data Attribute', 'train_original_image')
+    train_ground_truth = config.get('Data Attribute', 'train_ground_truth')
+    patch_height = config.getint('Data Attribute', 'patch_height')
+    patch_width = config.getint('Data Attribute', 'patch_width')
+    num_patch = config.getint('Training Setting', 'num_patch')
+    inside_FOV = config.getboolean('Training Setting', 'inside_FOV')
 
-    patches_imgs_train, patches_masks_train = get_data_training(
-        DRIVE_train_imgs_original=path_data + config.get('data paths', 'train_imgs_original'),
-        DRIVE_train_groudTruth=path_data + config.get('data paths', 'train_groundTruth'),  # masks
-        patch_height=int(config.get('data attributes', 'patch_height')),
-        patch_width=int(config.get('data attributes', 'patch_width')),
-        N_subimgs=int(config.get('training settings', 'N_subimgs')),
-        inside_FOV=config.getboolean('training settings','inside_FOV'))
+    patches_img_train, patches_gt_train = get_data_training(train_original_image=train_original_image,
+                                                                train_ground_truth=train_ground_truth,
+                                                                patch_height=patch_height,
+                                                                patch_width=patch_width,
+                                                                num_patch=num_patch,
+                                                                inside_FOV=inside_FOV)
 
-    # Save a sample of what you're feeding to the neural network
-    N_sample = min(patches_imgs_train.shape[0], 40)
-    visualize(group_images(patches_imgs_train[0:N_sample, :, :, :], 5), './' + name_experiment + '/' + "sample_input_imgs")  # .show()
-    visualize(group_images(patches_masks_train[0:N_sample, :, :, :], 5), './' + name_experiment + '/' + "sample_input_masks")  # .show()
+    N_sample = min(patches_img_train.shape[0], 40)
+    visualize(group_images(patches_img_train[0:N_sample, :, :, :], 5),
+              './result/' + name_experiment + '/sample_input_img')
+    visualize(group_images(patches_gt_train[0:N_sample, :, :, :], 5),
+              './result/' + name_experiment + '/sample_input_gt')
+    patches_gt_train = masks_Unet(patches_gt_train)
 
-    n_ch = patches_imgs_train.shape[1]
-    patch_height = patches_imgs_train.shape[2]
-    patch_width = patches_imgs_train.shape[3]
-    model = get_unet(n_ch, patch_height, patch_width)
-    print("Check: final output of the network:")
-    print(model.output_shape)
-    plot(model, to_file='./'+name_experiment+'/'+name_experiment + '_model.png')
-    json_string = model.to_json()
-    open('./' + name_experiment + '/' + name_experiment + '_architecture.json', 'w').write(json_string)
+    model = get_unet(patch_height, patch_width, num_channel)
+    model.to_json(fp = open('./' + name_experiment + '/' + name_experiment + '_architecture.json', 'w'))
+    plot(model, to_file='./result/' + name_experiment + '/model.png')
 
-    check_pointer = ModelCheckpoint(filepath='./' + name_experiment + '/' + name_experiment + '_best_weights.h5',
-                                   verbose=1, monitor='val_loss', mode='auto',
-                                   save_best_only=True)
+    num_epoch = config.getint('Training Setting', 'num_epoch')
+    batch_size = config.getint('Training Setting', 'batch_size')
+    check_pointer = ModelCheckpoint(filepath='./result/' + name_experiment + '/best_weights.h5',
+                                    verbose=1, monitor='val_loss', save_best_only=True, mode='auto')
+    lr_drop = LearningRateScheduler(lambda epoch: 0.005 if epoch>100 else 0.001)
 
-    def step_decay(epoch):
-        if epoch==100:
-            return 0.005
-        return 0.01
+    model.fit(patches_img_train, patches_gt_train, verbose=1,
+              epochs=num_epoch, batch_size=batch_size, shuffle=True, validation_split=0.1,
+              callbacks=[check_pointer, lr_drop])
+    model.save_weights('./' + name_experiment + '/last_weights.h5', overwrite=True)
 
-    lr_drop = LearningRateScheduler(step_decay)
 
-    patches_masks_train = masks_Unet(patches_masks_train)  # reduce memory consumption
-    model.fit(patches_imgs_train, patches_masks_train, epochs=N_epochs, batch_size=batch_size, verbose=1, shuffle=True,
-              validation_split=0.1, callbacks=[check_pointer, lr_drop])
-    model.save_weights('./' + name_experiment + '/' + name_experiment + '_last_weights.h5', overwrite=True)
-    # score = model.evaluate(patches_imgs_test, masks_Unet(patches_masks_test), verbose=0)
-    # print('Test score:', score[0], 'Test accuracy:', score[1])
-
-def test():
-    config = configparser.RawConfigParser()
-    config.read('configuration.txt')
-    path_data = config.get('data paths', 'path_local')
-    DRIVE_test_imgs_original = path_data + config.get('data paths', 'test_imgs_original')
+def test(config):
+    DRIVE_test_imgs_original = config.get('data paths', 'test_imgs_original')
     test_imgs_orig = load_hdf5(DRIVE_test_imgs_original)
     full_img_height = test_imgs_orig.shape[2]
     full_img_width = test_imgs_orig.shape[3]
-    DRIVE_test_border_masks = path_data + config.get('data paths', 'test_border_masks')
+    DRIVE_test_border_masks = config.get('data paths', 'test_border_masks')
     test_border_masks = load_hdf5(DRIVE_test_border_masks)
-    patch_height = int(config.get('data attributes', 'patch_height'))
-    patch_width = int(config.get('data attributes', 'patch_width'))
-    stride_height = int(config.get('testing settings', 'stride_height'))
-    stride_width = int(config.get('testing settings', 'stride_width'))
+    patch_height = config.getint('Data Attribute', 'patch_height')
+    patch_width = config.getint('Data Attribute', 'patch_width')
+    stride_height = config.getint('Test Setting', 'stride_height')
+    stride_width = config.getint('Test Setting', 'stride_width')
     assert (stride_height < patch_height and stride_width < patch_width)
     name_experiment = config.get('experiment name', 'name')
     path_experiment = './' + name_experiment + '/'
     Imgs_to_test = int(config.get('testing settings', 'full_images_to_test'))
     N_visual = int(config.get('testing settings', 'N_group_visual'))
     average_mode = config.getboolean('testing settings', 'average_mode')
-    gtruth= path_data + config.get('data paths', 'test_groundTruth')
+    gtruth= config.get('data paths', 'test_groundTruth')
     img_truth= load_hdf5(gtruth)
     visualize(group_images(test_imgs_orig[0:20,:,:,:],5),'original')#.show()
     visualize(group_images(test_border_masks[0:20,:,:,:],5),'borders')#.show()
@@ -119,8 +103,8 @@ def test():
     patches_masks_test = None
     if average_mode == True:
         patches_imgs_test, new_height, new_width, masks_test = get_data_testing_overlap(
-            DRIVE_test_imgs_original=DRIVE_test_imgs_original,  # original
-            DRIVE_test_groudTruth=path_data + config.get('data paths', 'test_groundTruth'),  # masks
+            DRIVE_test_imgs_original=DRIVE_test_imgs_original,
+            DRIVE_test_groudTruth=config.get('data paths', 'test_groundTruth'),
             Imgs_to_test=int(config.get('testing settings', 'full_images_to_test')),
             patch_height=patch_height,
             patch_width=patch_width,
@@ -128,8 +112,8 @@ def test():
             stride_width=stride_width)
     else:
         patches_imgs_test, patches_masks_test = get_data_testing(
-            DRIVE_test_imgs_original=DRIVE_test_imgs_original,  # original
-            DRIVE_test_groudTruth=path_data + config.get('data paths', 'test_groundTruth'),  # masks
+            DRIVE_test_imgs_original=DRIVE_test_imgs_original,
+            DRIVE_test_groudTruth=config.get('data paths', 'test_groundTruth'),
             Imgs_to_test=int(config.get('testing settings', 'full_images_to_test')),
             patch_height=patch_height,
             patch_width=patch_width)
@@ -143,6 +127,8 @@ def test():
     predictions = model.predict(patches_imgs_test, batch_size=32, verbose=2)
     print("predicted images size :")
     print(predictions.shape)
+    score = model.evaluate(patches_imgs_test, masks_Unet(patches_masks_test), verbose=0)
+    print('Test score:', score[0], 'Test accuracy:', score[1])
 
     # Convert the prediction arrays in corresponding images
     pred_patches = pred_to_imgs(predictions, patch_height, patch_width, "original")
@@ -251,3 +237,23 @@ def test():
                         + "\nSENSITIVITY: " + str(sensitivity)
                         + "\nSPECIFICITY: " + str(specificity)
                         + "\nPRECISION: " + str(precision))
+
+
+if __name__ == '__main__':
+    # 1\ Argument Parse
+    parser = argparse.ArgumentParser(description='main.py')
+    parser.add_argument('-e', '--exe_mode', default='train', help='The execution mode.(train/test)')
+    parser.add_argument('-c', '--config', default='./config/configuration.txt', help='The config file of experiment.')
+    args = parser.parse_args()
+
+    # 2\ Configuration Parse
+    config = configparser.ConfigParser()
+    config.read(args.config)
+
+    # 3\ Select the execution mode.
+    if args.exe_mode == 'train':
+        train(config)
+    elif args.exe_mode == 'test':
+        test(config)
+    else:
+        print('No mode named {}.'.format(args.exe_mode))

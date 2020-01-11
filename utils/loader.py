@@ -69,14 +69,14 @@ def adjust_gamma(imgs, gamma=1.0):
     return new_imgs
 
 # Load the original data and return the extracted patches for training/testing
-def get_data_training(DRIVE_train_imgs_original,
-                      DRIVE_train_groudTruth,
+def get_data_training(train_original_image,
+                      train_ground_truth,
                       patch_height,
                       patch_width,
-                      N_subimgs,
+                      num_patch,
                       inside_FOV):
-    train_imgs_original = load_hdf5(DRIVE_train_imgs_original)
-    train_masks = load_hdf5(DRIVE_train_groudTruth) #masks always the same
+    train_imgs_original = load_hdf5(train_original_image)
+    train_masks = load_hdf5(train_ground_truth) #masks always the same
     # visualize(group_images(train_imgs_original[0:20,:,:,:],5),'imgs_train')#.show()  #check original imgs train
     train_imgs = my_PreProc(train_imgs_original)
     train_masks = train_masks/255.
@@ -90,7 +90,7 @@ def get_data_training(DRIVE_train_imgs_original,
     print("train images range (min-max): " +str(np.min(train_imgs)) +' - '+str(np.max(train_imgs)))
     print("train masks are within 0-1\n")
     #extract the TRAINING patches from the full images
-    patches_imgs_train, patches_masks_train = extract_random(train_imgs,train_masks,patch_height,patch_width,N_subimgs,inside_FOV)
+    patches_imgs_train, patches_masks_train = extract_random(train_imgs,train_masks,patch_height,patch_width,num_patch,inside_FOV)
     data_consistency_check(patches_imgs_train, patches_masks_train)
     print("\ntrain PATCHES images/masks shape:")
     print(patches_imgs_train.shape)
