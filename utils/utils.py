@@ -30,7 +30,6 @@ def group_images(data,per_row):
     return totimg
 
 def visualize(data,filename):
-    img = None
     if data.shape[2]==1:  #in case it is black and white
         data = np.reshape(data,(data.shape[0],data.shape[1]))
     if np.max(data)>1:
