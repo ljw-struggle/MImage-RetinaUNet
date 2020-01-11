@@ -4,20 +4,20 @@ import numpy as np
 from PIL import Image
 
 def load_hdf5(in_file):
-  with h5py.File(in_file, 'r') as f:
-    return f['data'][()]
+  with h5py.File(in_file, 'r') as file:
+    return file['data'][()]
 
 def write_hdf5(data, out_file):
-  with h5py.File(out_file, 'w') as f:
-    f.create_dataset('data', data=data, dtype=data.dtype)
+  with h5py.File(out_file, 'w') as file:
+    file.create_dataset('data', data=data, dtype=data.dtype)
 
 def rgb2gray(rgb):
-    bn_imgs = rgb[:,0,:,:]*0.299 + rgb[:,1,:,:]*0.587 + rgb[:,2,:,:]*0.114
-    bn_imgs = np.reshape(bn_imgs,(rgb.shape[0],1,rgb.shape[2],rgb.shape[3]))
+    bn_imgs = rgb[:,:,:,0]*0.299 + rgb[:,:,:,1]*0.587 + rgb[:,:,:,2]*0.114
+    bn_imgs = np.reshape(bn_imgs,(rgb.shape[0], rgb.shape[1], rgb.shape[2], 1))
     return bn_imgs
 
-def group_images(data,per_row):
-    data = np.transpose(data,(0,2,3,1))  #corect format for imshow
+def group_images(data, per_row):
+    data = np.transpose(data,(0,2,3,1))
     all_stripe = []
     for i in range(int(data.shape[0]/per_row)):
         stripe = data[i*per_row]
@@ -30,9 +30,9 @@ def group_images(data,per_row):
     return totimg
 
 def visualize(data,filename):
-    if data.shape[2]==1:  #in case it is black and white
+    if data.shape[2] == 1:
         data = np.reshape(data,(data.shape[0],data.shape[1]))
-    if np.max(data)>1:
+    if np.max(data) > 1:
         img = Image.fromarray(data.astype(np.uint8))   #the image is already 0-255
     else:
         img = Image.fromarray((data*255).astype(np.uint8))  #the image is between 0-1
@@ -54,24 +54,52 @@ def masks_Unet(masks):
                 new_masks[i,j,1]=1
     return new_masks
 
-def pred_to_imgs(pred, patch_height, patch_width, mode="original"):
+def pred_to_imgs(pred, patch_height, patch_width, mode='original'):
     pred_images = np.empty((pred.shape[0],pred.shape[1]))
-    if mode=="original":
+    if mode == 'original':
         for i in range(pred.shape[0]):
             for pix in range(pred.shape[1]):
                 pred_images[i,pix]=pred[i,pix,1]
-    elif mode=="threshold":
+    elif mode == 'threshold':
         for i in range(pred.shape[0]):
             for pix in range(pred.shape[1]):
                 if pred[i,pix,1]>=0.5:
                     pred_images[i,pix]=1
                 else:
                     pred_images[i,pix]=0
-    else:
-        print("mode " +str(mode) +" not recognized, it can be 'original' or 'threshold'")
-        exit()
     pred_images = np.reshape(pred_images,(pred_images.shape[0],1, patch_height, patch_width))
     return pred_images
+
+def pred_only_FOV(data_imgs,data_masks,original_imgs_border_masks): #return only the pixels contained in the FOV, for both images and masks
+    height = data_imgs.shape[2]
+    width = data_imgs.shape[3]
+    new_pred_imgs = []
+    new_pred_masks = []
+    for i in range(data_imgs.shape[0]):  #loop over the full images
+        for x in range(width):
+            for y in range(height):
+                if inside_FOV_DRIVE(i,x,y,original_imgs_border_masks)==True:
+                    new_pred_imgs.append(data_imgs[i,:,y,x])
+                    new_pred_masks.append(data_masks[i,:,y,x])
+    new_pred_imgs = np.asarray(new_pred_imgs)
+    new_pred_masks = np.asarray(new_pred_masks)
+    return new_pred_imgs, new_pred_masks
+
+def kill_border(data, original_imgs_border_masks):
+    height = data.shape[2]
+    width = data.shape[3]
+    for i in range(data.shape[0]):  #loop over the full images
+        for x in range(width):
+            for y in range(height):
+                if inside_FOV_DRIVE(i,x,y,original_imgs_border_masks)==False:
+                    data[i,:,y,x]=0.0
+
+def inside_FOV_DRIVE(i, x, y, DRIVE_masks):
+    if (x >= DRIVE_masks.shape[3] or y >= DRIVE_masks.shape[2]): #my image bigger than the original
+        return False
+    if (DRIVE_masks[i,0,y,x]>0):
+        return True
+    return False
 
 def recompone_overlap(preds, img_h, img_w, stride_h, stride_w):
     patch_h = preds.shape[2]
@@ -79,11 +107,11 @@ def recompone_overlap(preds, img_h, img_w, stride_h, stride_w):
     N_patches_h = (img_h-patch_h)//stride_h+1
     N_patches_w = (img_w-patch_w)//stride_w+1
     N_patches_img = N_patches_h * N_patches_w
-    print("N_patches_h: " +str(N_patches_h))
-    print("N_patches_w: " +str(N_patches_w))
-    print("N_patches_img: " +str(N_patches_img))
+    print('N_patches_h: ' +str(N_patches_h))
+    print('N_patches_w: ' +str(N_patches_w))
+    print('N_patches_img: ' +str(N_patches_img))
     N_full_imgs = preds.shape[0]//N_patches_img
-    print("According to the dimension inserted, there are " +str(N_full_imgs) +" full images (of " +str(img_h)+"x" +str(img_w) +" each)")
+    print('According to the dimension inserted, there are ' +str(N_full_imgs) +' full images (of ' +str(img_h)+'x' +str(img_w) +' each)')
     full_prob = np.zeros((N_full_imgs,preds.shape[1],img_h,img_w))  #itialize to zero mega array with sum of Probabilities
     full_sum = np.zeros((N_full_imgs,preds.shape[1],img_h,img_w))
     k = 0 #iterator over all the patches

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from sklearn.metrics import roc_auc_score, precision_recall_curve, \
-    confusion_matrix, jaccard_score, f1_score, roc_curve
+from sklearn.metrics import roc_auc_score, average_precision_score, roc_curve, precision_recall_curve, \
+    confusion_matrix, jaccard_score, f1_score, classification_report
 from matplotlib import pyplot as plt
 
-def plot_roc_curve(y_true, y_scores, path_experiment):
-    fpr, tpr, thresholds = roc_curve(y_true, y_scores)
-    AUROC = roc_auc_score(y_true, y_scores)
+def plot_roc_curve(y_true, y_score, path_experiment):
+    fpr, tpr, thresholds = roc_curve(y_true, y_score)
+    AUROC = roc_auc_score(y_true, y_score)
     plt.figure()
     plt.plot(fpr, tpr, '-', label='AUROC = %0.4f' % AUROC)
     plt.title('ROC curve')
@@ -16,11 +16,9 @@ def plot_roc_curve(y_true, y_scores, path_experiment):
     plt.savefig(path_experiment + "ROC.png")
     return AUROC
 
-def plot_pr_curve(y_true, y_scores, path_experiment):
-    precision, recall, _ = precision_recall_curve(y_true, y_scores)
-    precision = np.fliplr([precision])[0]
-    recall = np.fliplr([recall])[0]
-    AUPR = np.trapz(precision, recall)
+def plot_pr_curve(y_true, y_score, path_experiment):
+    precision, recall, _ = precision_recall_curve(y_true, y_score)
+    AUPR = average_precision_score(y_true, y_score)
     plt.figure()
     plt.plot(recall, precision, '-', label='AUPR = %0.4f' % AUPR)
     plt.title('Precision - Recall curve')
@@ -54,6 +52,8 @@ def evaluate_metric(y_true, y_score, path_experiment):
         sensitivity = float(confusion[1, 1]) / float(confusion[1, 1] + confusion[1, 0])
     if float(confusion[1, 1] + confusion[0, 1]) != 0:
         precision = float(confusion[1, 1]) / float(confusion[1, 1] + confusion[0, 1])
+
+    classification_report(y_true, y_pred)
 
     metric_str = 'Area under ROC curve: ' + str(AUROC) + '\n' + \
                  'Area under PR curve: ' + str(AUPR) + '\n\n\n' + \

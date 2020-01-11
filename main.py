@@ -22,7 +22,7 @@ def train(config):
     num_patch = config.getint('Training Setting', 'num_patch')
     inside_FOV = config.getboolean('Training Setting', 'inside_FOV')
 
-    patches_img_train, patches_gt_train = get_data_training(train_original_image=train_original_image,
+    patches_img_train, patches_gt_train = loader.get_data_training(train_original_image=train_original_image,
                                                             train_ground_truth=train_ground_truth,
                                                             patch_height=patch_height,
                                                             patch_width=patch_width,
@@ -75,7 +75,7 @@ def test(config):
     masks_test = None
     patches_masks_test = None
     if average_mode == True:
-        patches_imgs_test, new_height, new_width, masks_test = get_data_testing_overlap(
+        patches_imgs_test, new_height, new_width, masks_test = loader.get_data_testing_overlap(
             DRIVE_test_imgs_original=DRIVE_test_imgs_original,
             DRIVE_test_groudTruth=config.get('Data Attribute', 'test_ground_truth'),
             Imgs_to_test=20,
@@ -95,17 +95,15 @@ def test(config):
     model = model_from_json(open(path_experiment + name_experiment + '_architecture.json').read())
     model.load_weights(path_experiment + name_experiment + '_' + best_last + '_weights.h5')
     predictions = model.predict(patches_imgs_test, batch_size=32, verbose=2)
-    print('predicted images size :')
-    print(predictions.shape)
+    print('predicted images size :' + str(predictions.shape))
     score = model.evaluate(patches_imgs_test, masks_Unet(patches_masks_test), verbose=0)
     print('Test score:', score[0], 'Test accuracy:', score[1])
-
     pred_patches = pred_to_imgs(predictions, patch_height, patch_width, 'original')
 
     # Elaborate and visualize the predicted images
     if average_mode == True:
         pred_imgs = recompone_overlap(pred_patches, new_height, new_width, stride_height, stride_width)  # predictions
-        orig_imgs = my_PreProc(test_imgs_orig[0:pred_imgs.shape[0], :, :, :])  # originals
+        orig_imgs = loader.preprocess(test_imgs_orig[0:pred_imgs.shape[0], :, :, :])  # originals
         gtruth_masks = masks_test  # ground truth masks
     else:
         pred_imgs = recompone(pred_patches, 13, 12)  # predictions
