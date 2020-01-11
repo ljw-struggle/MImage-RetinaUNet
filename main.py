@@ -4,7 +4,7 @@ import shutil
 import random
 import configparser
 import argparse
-from model.unet_func import get_unet
+from model.unet_func import get_unet_model
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from keras.utils.vis_utils import plot_model as plot
 from keras.models import model_from_json
@@ -15,8 +15,7 @@ from sklearn.metrics import jaccard_similarity_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_curve
 
-from utils.loader import recompone
-from utils.loader import recompone_overlap
+
 from utils.loader import kill_border
 from utils.loader import pred_only_FOV
 from utils.loader import get_data_training
@@ -53,7 +52,7 @@ def train(config):
     visualize(group_images(patches_gt_train[0:40, :, :, :], 5), './result/' + name_experiment + '/sample_input_gt')
     patches_gt_train = masks_Unet(patches_gt_train)
 
-    model = get_unet(patch_height, patch_width, patch_channel)
+    model = get_unet_model(patch_height, patch_width, patch_channel)
     model.to_json(fp = open('./' + name_experiment + '/' + name_experiment + '_architecture.json', 'w'))
     plot(model, to_file='./result/' + name_experiment + '/model.png')
 
@@ -67,7 +66,6 @@ def train(config):
               epochs=num_epoch, batch_size=batch_size, shuffle=True, validation_split=0.1,
               callbacks=[check_pointer, lr_drop])
     model.save_weights('./' + name_experiment + '/last_weights.h5', overwrite=True)
-
 
 def test(config):
     DRIVE_test_imgs_original = config.get('Data Attribute', 'test_original_image')
@@ -236,7 +234,6 @@ def test(config):
                         + "\nSENSITIVITY: " + str(sensitivity)
                         + "\nSPECIFICITY: " + str(specificity)
                         + "\nPRECISION: " + str(precision))
-
 
 if __name__ == '__main__':
     # 1\ Argument Parse
