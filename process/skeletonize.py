@@ -5,16 +5,15 @@ import matplotlib.pyplot as plt
 def skeletonize():
     image=color.rgb2gray(data.horse())
     image=1-image
-
     skeleton =morphology.skeletonize(image)
 
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(8, 4))
-    ax1.imshow(image, cmap=plt.cm.gray)
+    ax1.imshow(image, cmap=plt.cm.get_cmap('gray'))
+    ax1.set_title('original', fontsize=15)
     ax1.axis('off')
-    ax1.set_title('original', fontsize=20)
-    ax2.imshow(skeleton, cmap=plt.cm.gray)
+    ax2.imshow(skeleton, cmap=plt.cm.get_cmap('gray'))
+    ax2.set_title('skeleton', fontsize=15)
     ax2.axis('off')
-    ax2.set_title('skeleton', fontsize=20)
     fig.tight_layout()
     plt.show()
 

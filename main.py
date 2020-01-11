@@ -17,7 +17,6 @@ from sklearn.metrics import roc_curve
 
 from utils.loader import recompone
 from utils.loader import recompone_overlap
-from utils.loader import paint_border
 from utils.loader import kill_border
 from utils.loader import pred_only_FOV
 from utils.loader import get_data_training
@@ -35,29 +34,26 @@ shutil.copy('file', 'file_dir')
 
 def train(config):
     name_experiment = config.get('Experiment Name', 'name')
-    num_channel = 2
     train_original_image = config.get('Data Attribute', 'train_original_image')
     train_ground_truth = config.get('Data Attribute', 'train_ground_truth')
     patch_height = config.getint('Data Attribute', 'patch_height')
     patch_width = config.getint('Data Attribute', 'patch_width')
+    patch_channel = config.getint('Data Attribute', 'num_channel')
     num_patch = config.getint('Training Setting', 'num_patch')
     inside_FOV = config.getboolean('Training Setting', 'inside_FOV')
 
     patches_img_train, patches_gt_train = get_data_training(train_original_image=train_original_image,
-                                                                train_ground_truth=train_ground_truth,
-                                                                patch_height=patch_height,
-                                                                patch_width=patch_width,
-                                                                num_patch=num_patch,
-                                                                inside_FOV=inside_FOV)
+                                                            train_ground_truth=train_ground_truth,
+                                                            patch_height=patch_height,
+                                                            patch_width=patch_width,
+                                                            num_patch=num_patch,
+                                                            inside_FOV=inside_FOV)
 
-    N_sample = min(patches_img_train.shape[0], 40)
-    visualize(group_images(patches_img_train[0:N_sample, :, :, :], 5),
-              './result/' + name_experiment + '/sample_input_img')
-    visualize(group_images(patches_gt_train[0:N_sample, :, :, :], 5),
-              './result/' + name_experiment + '/sample_input_gt')
+    visualize(group_images(patches_img_train[0:40, :, :, :], 5), './result/' + name_experiment + '/sample_input_img')
+    visualize(group_images(patches_gt_train[0:40, :, :, :], 5), './result/' + name_experiment + '/sample_input_gt')
     patches_gt_train = masks_Unet(patches_gt_train)
 
-    model = get_unet(patch_height, patch_width, num_channel)
+    model = get_unet(patch_height, patch_width, patch_channel)
     model.to_json(fp = open('./' + name_experiment + '/' + name_experiment + '_architecture.json', 'w'))
     plot(model, to_file='./result/' + name_experiment + '/model.png')
 
@@ -74,23 +70,23 @@ def train(config):
 
 
 def test(config):
-    DRIVE_test_imgs_original = config.get('data paths', 'test_imgs_original')
+    DRIVE_test_imgs_original = config.get('Data Attribute', 'test_original_image')
     test_imgs_orig = load_hdf5(DRIVE_test_imgs_original)
     full_img_height = test_imgs_orig.shape[2]
     full_img_width = test_imgs_orig.shape[3]
-    DRIVE_test_border_masks = config.get('data paths', 'test_border_masks')
+    DRIVE_test_border_masks = config.get('data paths', 'test_border_mask')
     test_border_masks = load_hdf5(DRIVE_test_border_masks)
     patch_height = config.getint('Data Attribute', 'patch_height')
     patch_width = config.getint('Data Attribute', 'patch_width')
+    patch_channel = config.getint('Data Attribute', 'num_channel')
+
     stride_height = config.getint('Test Setting', 'stride_height')
     stride_width = config.getint('Test Setting', 'stride_width')
-    assert (stride_height < patch_height and stride_width < patch_width)
-    name_experiment = config.get('experiment name', 'name')
+    name_experiment = config.get('Experiment Name', 'name')
     path_experiment = './' + name_experiment + '/'
-    Imgs_to_test = int(config.get('testing settings', 'full_images_to_test'))
-    N_visual = int(config.get('testing settings', 'N_group_visual'))
-    average_mode = config.getboolean('testing settings', 'average_mode')
-    gtruth= config.get('data paths', 'test_groundTruth')
+    N_visual = int(config.get('Test Setting', 'N_group_visual'))
+    average_mode = config.getboolean('Test Setting', 'average_mode')
+    gtruth= config.get('Data Attribute', 'test_ground_truth')
     img_truth= load_hdf5(gtruth)
     visualize(group_images(test_imgs_orig[0:20,:,:,:],5),'original')#.show()
     visualize(group_images(test_border_masks[0:20,:,:,:],5),'borders')#.show()
@@ -119,7 +115,7 @@ def test(config):
             patch_width=patch_width)
 
     # Run the prediction of the patches
-    best_last = config.get('testing settings', 'best_last')
+    best_last = config.get('Test Setting', 'best_last')
     # Load the saved model
     model = model_from_json(open(path_experiment + name_experiment + '_architecture.json').read())
     model.load_weights(path_experiment + name_experiment + '_' + best_last + '_weights.h5')
@@ -167,6 +163,8 @@ def test(config):
         total_img = np.concatenate((orig_stripe, masks_stripe, pred_stripe), axis=0)
         visualize(total_img, path_experiment + name_experiment + "_Original_GroundTruth_Prediction" + str(i))  # .show()
 
+
+
     # Evaluate the results
     y_scores, y_true = pred_only_FOV(pred_imgs, gtruth_masks, test_border_masks)  # returns data only inside the FOV
     print("Calculating results only inside the FOV:")
@@ -176,6 +174,7 @@ def test(config):
     print("y true pixels: " + str(
         y_true.shape[0]) + " (radius 270: 270*270*3.14==228906), including background around retina: " + str(
         gtruth_masks.shape[2] * gtruth_masks.shape[3] * gtruth_masks.shape[0]) + " (584*565==329960)")
+
 
     # Area under the ROC curve
     fpr, tpr, thresholds = roc_curve((y_true), y_scores)
@@ -190,8 +189,8 @@ def test(config):
 
     # Precision-recall curve
     precision, recall, _ = precision_recall_curve(y_true, y_scores)
-    precision = np.fliplr([precision])[0]  # so the array is increasing (you won't get negative AUC)
-    recall = np.fliplr([recall])[0]  # so the array is increasing (you won't get negative AUC)
+    precision = np.fliplr([precision])[0]
+    recall = np.fliplr([recall])[0]
     AUC_prec_rec = np.trapz(precision, recall)
     plt.figure()
     plt.plot(recall, precision, '-', label='Area Under the Curve (AUC = %0.4f)' % AUC_prec_rec)
