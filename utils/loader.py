@@ -6,17 +6,14 @@ from utils.utils import *
 num_image, height, width, channel = 20, 584, 565, 3
 
 class loader(object):
-    def __init__(self):
-        pass
-
     @classmethod
     def get_data_training(self, original_image_path, ground_truth_path, patch_height, patch_width, num_patch, inside_FOV):
         train_imgs_original = load_hdf5(original_image_path)
         train_masks = load_hdf5(ground_truth_path)
         train_imgs = self.preprocess(train_imgs_original)
         train_masks = train_masks/255.
-        train_imgs = train_imgs[:,:,9:574,:] # cut bottom and top so now it is 565*565
-        train_masks = train_masks[:,:,9:574,:] # cut bottom and top so now it is 565*565
+        train_imgs = train_imgs[:,:,9:574,:]
+        train_masks = train_masks[:,:,9:574,:]
         patches_imgs_train, patches_masks_train = self.extract_random(train_imgs,train_masks,patch_height,patch_width,num_patch,inside_FOV)
         return patches_imgs_train, patches_masks_train
 
@@ -41,10 +38,10 @@ class loader(object):
         test_imgs = self.preprocess(test_imgs_original)
         test_masks = test_masks/255.
         test_imgs = test_imgs[:,:,:,:]
-        test_masks = test_masks[:,:,:,:]
+        patches_masks_test = test_masks[:,:,:,:]
         test_imgs = self.paint_border_overlap(test_imgs, patch_height, patch_width, stride_height, stride_width)
         patches_imgs_test = self.extract_ordered_overlap(test_imgs,patch_height,patch_width,stride_height,stride_width)
-        return patches_imgs_test, test_imgs.shape[2], test_imgs.shape[3], test_masks
+        return patches_imgs_test, patches_masks_test
 
     @staticmethod
     def preprocess(data):
@@ -58,15 +55,12 @@ class loader(object):
             imgs_normalized[i] = ((imgs_normalized[i] - np.min(imgs_normalized[i])) / (
                         np.max(imgs_normalized[i]) - np.min(imgs_normalized[i]))) * 255
 
-        # 2\ CLAHE Equalized
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        # 2\ CLAHE\HISTOGRAM Equalization
         imgs_equalized = np.empty(imgs_normalized.shape)
         for i in range(imgs_normalized.shape[0]):
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
             imgs_equalized[i, 0] = clahe.apply(np.array(imgs_normalized[i, 0], dtype=np.uint8))
-        # histogram equalization
-        # imgs_equalized = np.empty(imgs_normalized.shape)
-        # for i in range(imgs_normalized.shape[0]):
-        #     imgs_equalized[i, 0] = cv2.equalizeHist(np.array(imgs_normalized[i, 0], dtype=np.uint8))
+            # imgs_equalized[i, 0] = cv2.equalizeHist(np.array(imgs_normalized[i, 0], dtype=np.uint8))
 
         # 3\ Adjust Gamma
         gamma = 1.2
@@ -77,7 +71,6 @@ class loader(object):
             new_imgs[i, 0] = cv2.LUT(np.array(imgs_equalized[i, 0], dtype=np.uint8), table)
 
         train_imgs = new_imgs/255.
-
         return train_imgs
 
     @staticmethod
