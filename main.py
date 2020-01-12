@@ -78,20 +78,14 @@ def test(config):
 
     test_border_mask = load_hdf5(test_border_mask)
 
-    def kill_border(data, original_imgs_border_masks):
-        height = data.shape[2]
-        width = data.shape[3]
-        for i in range(data.shape[0]):
-            for x in range(width):
-                for y in range(height):
-                    if inside_FOV_DRIVE(i, x, y, original_imgs_border_masks) == False:
-                        data[i, :, y, x] = 0.0
+    height = data.shape[2]
+    width = data.shape[3]
+    for i in range(data.shape[0]):
+        for x in range(width):
+            for y in range(height):
+                if inside_FOV_DRIVE(i, x, y, original_imgs_border_masks) == False:
+                    data[i, :, y, x] = 0.0
 
-    kill_border(pred_img, test_border_mask)
-    y_score, y_true = pred_only_FOV(pred_img[:, 0:584, 0:565, :], gt_img[:, 0:584, 0:565, :], test_border_mask)
-    evaluate_metric(y_true, y_score, './result/' + name_experiment)
-
-def pred_only_FOV(data_imgs,data_masks,original_imgs_border_masks):
     height = data_imgs.shape[2]
     width = data_imgs.shape[3]
     new_pred_imgs = []
@@ -99,19 +93,14 @@ def pred_only_FOV(data_imgs,data_masks,original_imgs_border_masks):
     for i in range(data_imgs.shape[0]):
         for x in range(width):
             for y in range(height):
-                if inside_FOV_DRIVE(i,x,y,original_imgs_border_masks)==True:
-                    new_pred_imgs.append(data_imgs[i,:,y,x])
-                    new_pred_masks.append(data_masks[i,:,y,x])
+                if inside_FOV_DRIVE(i, x, y, original_imgs_border_masks) == True:
+                    new_pred_imgs.append(data_imgs[i, :, y, x])
+                    new_pred_masks.append(data_masks[i, :, y, x])
     new_pred_imgs = np.asarray(new_pred_imgs)
     new_pred_masks = np.asarray(new_pred_masks)
     return new_pred_imgs, new_pred_masks
-
-def inside_FOV_DRIVE(i, x, y, DRIVE_masks):
-    if (x >= DRIVE_masks.shape[3] or y >= DRIVE_masks.shape[2]):
-        return False
-    if (DRIVE_masks[i,0,y,x]>0):
-        return True
-    return False
+    y_score, y_true = pred_only_FOV(pred_img[:, 0:584, 0:565, :], gt_img[:, 0:584, 0:565, :], test_border_mask)
+    evaluate_metric(y_true, y_score, './result/' + name_experiment)
 
 if __name__ == '__main__':
     # 1\ Argument Parse
