@@ -8,13 +8,18 @@ num_image, height, width, channel = 20, 584, 565, 3
 
 class loader(object):
     @classmethod
-    def get_data_training(self, original_image_path, ground_truth_path, patch_height, patch_width, num_patch, inside_FOV):
+    def get_data_training(self, original_image_path, ground_truth_path, border_mask_path,
+                          patch_height, patch_width, num_patch, inside_FOV=False):
         original_images = load_hdf5(original_image_path) # shape = (-1, 584, 565, 3)
-        ground_truths = load_hdf5(ground_truth_path) # shape = (-1, 584, 565, 1)
+        raw_ground_truths = load_hdf5(ground_truth_path) # shape = (-1, 584, 565, 1)
+        masks = load_hdf5(border_mask_path) # shape = (-1, 584, 565, 1)
 
         # 1\ Processing
         processed_images = self.preprocess(original_images) # shape = (-1, 584, 565, 1)
-        ground_truths = ground_truths/255. # shape = (-1, 584, 565, 1)
+        ground_truths = np.zeros((raw_ground_truths.shape[0], 584, 565, 2))  # shape = (-1, 584, 565, 2)
+        ground_truths[:, 584, 565, 0] = 1 - raw_ground_truths / 255.
+        ground_truths[:, 584, 565, 1] = raw_ground_truths / 255.
+        masks = masks/255. # shape = (-1, 584, 565, 1)
 
         # 2\ Divide to patches.
         num_patch_per_img = num_patch / processed_images.shape[0]
@@ -23,6 +28,10 @@ class loader(object):
             for k in range(num_patch_per_img):
                 y_ = random.randint(0, 584 - patch_height)
                 x_ = random.randint(0, 565 - patch_width)
+                if inside_FOV:
+                    if masks[i, y_, x_, 0]==0 or masks[i, y_+patch_height, x_+patch_width, 0]==0 or \
+                       masks[i, y_, x_, 0]==0 or masks[i, y_+patch_height, x_+patch_width, 0]==0:
+                        continue
                 processed_image_patch = processed_images[i, y_:y_ + patch_height, x_:x_ + patch_width, :]
                 ground_truth_patch = ground_truths[i, y_:y_ + patch_height, x_:x_ + patch_width, :]
                 processed_image_patches.append(processed_image_patch)
@@ -31,24 +40,20 @@ class loader(object):
         return processed_image_patches, ground_truth_patches
 
     @classmethod
-    def get_data_testing(self, original_image_path, ground_truth_path, patch_height, patch_width):
+    def get_data_testing(self, original_image_path, patch_height, patch_width):
         original_images = load_hdf5(original_image_path) # shape = (-1, 584, 565, 3)
-        ground_truths = load_hdf5(ground_truth_path) # shape = (-1, 584, 565, 1)
 
         # 1\ Processing
         processed_images = self.preprocess(original_images) # shape = (-1, 584, 565, 1)
-        ground_truths = ground_truths/255. # shape = (-1, 584, 565, 1)
 
         # 2\ Paint Border.
         new_height = np.ceil(584/patch_height)*patch_height
         new_width = np.ceil(565/patch_width)*patch_width
         new_images = np.zeros((processed_images.shape[0], new_height, new_width, 1))
-        new_truths = np.zeros((processed_images.shape[0], new_height, new_width, 1))
         new_images[:, 0:584, 0:565, :] = processed_images
-        new_truths[:, 0:584, 0:565, :] = ground_truths
 
         # 3\ Divide to patches.
-        processed_image_patches, ground_truth_patches = [], []
+        processed_image_patches = []
         num_sample = new_images.shape[0]
         num_patch_height, num_patch_width = new_height / patch_height, new_width / patch_width
         for i in range(num_sample):
@@ -56,32 +61,25 @@ class loader(object):
                 for w in range(num_patch_width):
                     processed_image_patch = \
                         new_images[i, h*patch_height:(h+1)*patch_height, w*patch_width:(w+1)*patch_width, :]
-                    ground_truth_patch = \
-                        new_truths[i, h*patch_height:(h+1)*patch_height, w*patch_width:(w+1)*patch_width, :]
                     processed_image_patches.append(processed_image_patch)
-                    ground_truth_patches.append(ground_truth_patch)
 
-        return processed_image_patches, ground_truth_patches, num_patch_height, num_patch_width, new_images.shape[0]
+        return processed_image_patches, num_patch_height, num_patch_width, new_images.shape[0]
 
     @classmethod
-    def get_data_testing_overlap(self, original_image_path, ground_truth_path, patch_height, patch_width, stride_height, stride_width):
+    def get_data_testing_overlap(self, original_image_path, patch_height, patch_width, stride_height, stride_width):
         original_images = load_hdf5(original_image_path) # shape = (-1, 584, 565, 3)
-        ground_truths = load_hdf5(ground_truth_path) # shape = (-1, 584, 565, 1)
 
         # 1\ Processing
         processed_images = self.preprocess(original_images) # shape = (-1, 584, 565, 1)
-        ground_truths = ground_truths / 255. # shape = (-1, 584, 565, 1)
 
         # 2\ Paint Border.
         new_height = np.ceil((584 - patch_height) / stride_height) * stride_height + patch_height
         new_width = np.ceil((565 - patch_width) / stride_width) * stride_width + patch_width
         new_images = np.zeros((processed_images.shape[0], new_height, new_width, 1))
-        new_truths = np.zeros((processed_images.shape[0], new_height, new_width, 1))
         new_images[:, 0:584, 0:565, :] = processed_images
-        new_truths[:, 0:584, 0:565, :] = ground_truths
 
         # 3\ Divide to patches.
-        processed_image_patches, ground_truth_patches = [], []
+        processed_image_patches = []
         num_sample = new_images.shape[0]
         num_patch_height, num_patch_width = (new_height-patch_height)/stride_height + 1, \
                                             (new_height-patch_width)/stride_width + 1
@@ -90,11 +88,8 @@ class loader(object):
                 for w in range(num_patch_width):
                     processed_image_patch = new_images[i, h*stride_height:h*stride_height+patch_height,
                                                        w*stride_width:w*stride_width+patch_width, :]
-                    ground_truth_patch = new_images[i, h*stride_height:h*stride_height+patch_height,
-                                                    w*stride_width:w*stride_width+patch_width, :]
                     processed_image_patches.append(processed_image_patch)
-                    ground_truth_patches.append(ground_truth_patch)
-        return processed_image_patches, ground_truth_patches, num_patch_height, num_patch_width, new_images.shape[0]
+        return processed_image_patches, num_patch_height, num_patch_width, new_images.shape[0]
 
     @staticmethod
     def preprocess(data, gamma=1.2):

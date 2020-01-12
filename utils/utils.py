@@ -28,82 +28,19 @@ def visualize(data,filename):
     if data.shape[2] == 1:
         data = np.reshape(data,(data.shape[0],data.shape[1]))
     if np.max(data) > 1:
-        img = Image.fromarray(data.astype(np.uint8))   #the image is already 0-255
+        img = Image.fromarray(data.astype(np.uint8))
     else:
-        img = Image.fromarray((data*255).astype(np.uint8))  #the image is between 0-1
+        img = Image.fromarray((data*255).astype(np.uint8))
     img.save(filename + '.png')
-    return img
 
-def masks_Unet(masks):
-    im_h = masks.shape[2]
-    im_w = masks.shape[3]
-    masks = np.reshape(masks,(masks.shape[0],im_h*im_w))
-    new_masks = np.empty((masks.shape[0],im_h*im_w,2))
-    for i in range(masks.shape[0]):
-        for j in range(im_h*im_w):
-            if  masks[i,j] == 0:
-                new_masks[i,j,0]=1
-                new_masks[i,j,1]=0
-            else:
-                new_masks[i,j,0]=0
-                new_masks[i,j,1]=1
-    return new_masks
-
-def pred_to_imgs(pred, patch_height, patch_width, mode='original'):
-    pred_images = np.empty((pred.shape[0],pred.shape[1]))
-    if mode == 'original':
-        for i in range(pred.shape[0]):
-            for pix in range(pred.shape[1]):
-                pred_images[i,pix]=pred[i,pix,1]
-    elif mode == 'threshold':
-        for i in range(pred.shape[0]):
-            for pix in range(pred.shape[1]):
-                if pred[i,pix,1]>=0.5:
-                    pred_images[i,pix]=1
-                else:
-                    pred_images[i,pix]=0
-    pred_images = np.reshape(pred_images,(pred_images.shape[0],1, patch_height, patch_width))
-    return pred_images
-
-def pred_only_FOV(data_imgs,data_masks,original_imgs_border_masks): #return only the pixels contained in the FOV, for both images and masks
-    height = data_imgs.shape[2]
-    width = data_imgs.shape[3]
-    new_pred_imgs = []
-    new_pred_masks = []
-    for i in range(data_imgs.shape[0]):  #loop over the full images
-        for x in range(width):
-            for y in range(height):
-                if inside_FOV_DRIVE(i,x,y,original_imgs_border_masks)==True:
-                    new_pred_imgs.append(data_imgs[i,:,y,x])
-                    new_pred_masks.append(data_masks[i,:,y,x])
-    new_pred_imgs = np.asarray(new_pred_imgs)
-    new_pred_masks = np.asarray(new_pred_masks)
-    return new_pred_imgs, new_pred_masks
-
-def kill_border(data, original_imgs_border_masks):
-    height = data.shape[2]
-    width = data.shape[3]
-    for i in range(data.shape[0]):  #loop over the full images
-        for x in range(width):
-            for y in range(height):
-                if inside_FOV_DRIVE(i,x,y,original_imgs_border_masks)==False:
-                    data[i,:,y,x]=0.0
-
-def inside_FOV_DRIVE(i, x, y, DRIVE_masks):
-    if (x >= DRIVE_masks.shape[3] or y >= DRIVE_masks.shape[2]): #my image bigger than the original
-        return False
-    if (DRIVE_masks[i,0,y,x]>0):
-        return True
-    return False
-
-def recompone_overlap(preds, img_h, img_w, stride_h, stride_w):
+def recompose_overlap(preds, img_h, img_w, stride_h, stride_w):
     patch_h = preds.shape[2]
     patch_w = preds.shape[3]
     N_patches_h = (img_h-patch_h)//stride_h+1
     N_patches_w = (img_w-patch_w)//stride_w+1
     N_patches_img = N_patches_h * N_patches_w
     N_full_imgs = preds.shape[0]//N_patches_img
-    full_prob = np.zeros((N_full_imgs,preds.shape[1],img_h,img_w))  #itialize to zero mega array with sum of Probabilities
+    full_prob = np.zeros((N_full_imgs,preds.shape[1],img_h,img_w))
     full_sum = np.zeros((N_full_imgs,preds.shape[1],img_h,img_w))
     k = 0
     for i in range(N_full_imgs):
@@ -116,14 +53,13 @@ def recompone_overlap(preds, img_h, img_w, stride_h, stride_w):
     print(final_avg.shape)
     return final_avg
 
-def recompone(data,N_h,N_w):
+def recompose(data,N_h,N_w):
     N_pacth_per_img = N_w*N_h
     N_full_imgs = data.shape[0]/N_pacth_per_img
     patch_h = data.shape[2]
     patch_w = data.shape[3]
     full_recomp = np.empty((N_full_imgs,data.shape[1],N_h*patch_h,N_w*patch_w))
-    k = 0
-    s = 0
+    k, s = 0, 0
     while (s<data.shape[0]):
         single_recon = np.empty((data.shape[1],N_h*patch_h,N_w*patch_w))
         for h in range(N_h):

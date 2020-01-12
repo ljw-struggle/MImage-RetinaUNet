@@ -17,23 +17,22 @@ def train(config):
     name_experiment      = config.get('Experiment Name', 'name')
     train_original_image = config.get('Data Attribute', 'train_original_image')
     train_ground_truth   = config.get('Data Attribute', 'train_ground_truth')
+    train_border_mask   = config.get('Data Attribute', 'train_border_mask')
     patch_height         = config.getint('Data Attribute', 'patch_height')
     patch_width          = config.getint('Data Attribute', 'patch_width')
-    patch_channel        = config.getint('Data Attribute', 'num_channel')
     num_patch            = config.getint('Training Setting', 'num_patch')
-    inside_FOV           = config.getboolean('Training Setting', 'inside_FOV')
     num_epoch            = config.getint('Training Setting', 'num_epoch')
     batch_size           = config.getint('Training Setting', 'batch_size')
+    inside_FOV           = config.getboolean('Training Setting', 'inside_FOV')
 
     patches_img_train, patches_gt_train = loader.get_data_training(
-        original_image_path=train_original_image, ground_truth_path=train_ground_truth,
+        original_image_path=train_original_image, ground_truth_path=train_ground_truth, border_mask_path=train_border_mask,
         patch_height=patch_height, patch_width=patch_width, num_patch=num_patch, inside_FOV=inside_FOV)
 
     visualize(group_images(patches_img_train[0:40, :, :, :], 5), './result/' + name_experiment + '/sample_input_img')
-    visualize(group_images(patches_gt_train[0:40, :, :, :], 5), './result/' + name_experiment + '/sample_input_gt')
-    patches_gt_train = masks_Unet(patches_gt_train)
+    visualize(group_images(patches_gt_train[0:40, :, :, 0:1], 5), './result/' + name_experiment + '/sample_input_gt')
 
-    model = get_unet_model(patch_height, patch_width, patch_channel)
+    model = get_unet_model(patch_height, patch_width, 1)
     model.to_json(fp = open('./result/' + name_experiment + '/architecture.json', 'w'))
     plot(model, to_file='./result/' + name_experiment + '/model.png')
 
@@ -57,30 +56,62 @@ def test(config):
     stride_width        = config.getint('Test Setting', 'stride_width')
 
     if average_mode == True:
-        patches_img_test, patches_gt_test = loader.get_data_testing_overlap(
-            original_image_path=test_original_image, ground_truth_path=test_ground_truth,
-            patch_height=patch_height, patch_width=patch_width, stride_height=stride_height, stride_width=stride_width)
+        gt_img = load_hdf5(test_ground_truth)
+        patches_img_test, n_h, n_w, num = loader.get_data_testing_overlap(
+            original_image_path=test_original_image, patch_height=patch_height,
+            patch_width=patch_width, stride_height=stride_height, stride_width=stride_width)
         model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
         model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
         pred_patches = model.predict(patches_img_test, batch_size=32, verbose=2)
-        pred_patches = pred_to_imgs(pred_patches, patch_height, patch_width, 'original')
-        pred_img = recompone_overlap(pred_patches, 584, 565, stride_height, stride_width)
-        gt_img = patches_gt_test
+        pred_patches = int(pred_patches[:, :, :, 1] > 0.5)
+        pred_img = recompose_overlap(pred_patches, patch_height, patch_width, stride_height, stride_width,
+                                     n_h, n_w, num, 584, 565)
     else:
-        patches_img_test, patches_gt_test = loader.get_data_testing(
-            original_image_path=test_original_image, ground_truth_path=test_ground_truth,
-            patch_height=patch_height, patch_width=patch_width)
+        gt_img = load_hdf5(test_ground_truth)
+        patches_img_test, n_h, b_w, num = loader.get_data_testing(
+            original_image_path=test_original_image, patch_height=patch_height, patch_width=patch_width)
         model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
         model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
         pred_patches = model.predict(patches_img_test, batch_size=32, verbose=2)
-        pred_patches = pred_to_imgs(pred_patches, patch_height, patch_width, 'original')
-        pred_img = recompone(pred_patches, 13, 12)
-        gt_img = recompone(patches_gt_test, 13, 12)
+        pred_patches= int(pred_patches[:, :, :, 1] > 0.5)
+        pred_img = recompose(pred_patches, patch_height, patch_width, n_h, n_w, num, 584, 565)
 
     test_border_mask = load_hdf5(test_border_mask)
+
+    def kill_border(data, original_imgs_border_masks):
+        height = data.shape[2]
+        width = data.shape[3]
+        for i in range(data.shape[0]):
+            for x in range(width):
+                for y in range(height):
+                    if inside_FOV_DRIVE(i, x, y, original_imgs_border_masks) == False:
+                        data[i, :, y, x] = 0.0
+
     kill_border(pred_img, test_border_mask)
     y_score, y_true = pred_only_FOV(pred_img[:, 0:584, 0:565, :], gt_img[:, 0:584, 0:565, :], test_border_mask)
     evaluate_metric(y_true, y_score, './result/' + name_experiment)
+
+def pred_only_FOV(data_imgs,data_masks,original_imgs_border_masks):
+    height = data_imgs.shape[2]
+    width = data_imgs.shape[3]
+    new_pred_imgs = []
+    new_pred_masks = []
+    for i in range(data_imgs.shape[0]):
+        for x in range(width):
+            for y in range(height):
+                if inside_FOV_DRIVE(i,x,y,original_imgs_border_masks)==True:
+                    new_pred_imgs.append(data_imgs[i,:,y,x])
+                    new_pred_masks.append(data_masks[i,:,y,x])
+    new_pred_imgs = np.asarray(new_pred_imgs)
+    new_pred_masks = np.asarray(new_pred_masks)
+    return new_pred_imgs, new_pred_masks
+
+def inside_FOV_DRIVE(i, x, y, DRIVE_masks):
+    if (x >= DRIVE_masks.shape[3] or y >= DRIVE_masks.shape[2]):
+        return False
+    if (DRIVE_masks[i,0,y,x]>0):
+        return True
+    return False
 
 if __name__ == '__main__':
     # 1\ Argument Parse

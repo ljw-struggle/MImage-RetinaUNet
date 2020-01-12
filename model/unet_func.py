@@ -28,8 +28,6 @@ def get_unet_model(patch_height, patch_width, patch_channel):
     conv5 = Dropout(0.2)(conv5)
     conv5 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv5)
     conv6 = Conv2D(2, (1, 1), activation='relu', padding='same')(conv5)
-    conv6 = Reshape((2, patch_height*patch_width))(conv6)
-    conv6 = Permute((2,1))(conv6)
     conv7 = Activation('softmax')(conv6)
     model = Model(inputs=inputs, outputs=conv7)
     optimizer = SGD(lr=0.01, decay=1e-6, momentum=0.3, nesterov=False)
