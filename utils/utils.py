@@ -11,11 +11,6 @@ def write_hdf5(data, out_file):
   with h5py.File(out_file, 'w') as file:
     file.create_dataset('data', data=data, dtype=data.dtype)
 
-def rgb2gray(rgb):
-    bn_imgs = rgb[:,:,:,0]*0.299 + rgb[:,:,:,1]*0.587 + rgb[:,:,:,2]*0.114
-    bn_imgs = np.reshape(bn_imgs,(rgb.shape[0], rgb.shape[1], rgb.shape[2], 1))
-    return bn_imgs
-
 def group_images(data, per_row):
     data = np.transpose(data,(0,2,3,1))
     all_stripe = []
