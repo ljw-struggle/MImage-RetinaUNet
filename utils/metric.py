@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score, roc_curve, precision_recall_curve, \
-    confusion_matrix, jaccard_score, f1_score, classification_report
+    confusion_matrix, jaccard_score, f1_score
 from matplotlib import pyplot as plt
+from PIL import Image
 
 def plot_roc_curve(y_true, y_score, path_experiment):
     fpr, tpr, thresholds = roc_curve(y_true, y_score)
@@ -32,7 +33,11 @@ def write_metric(str, path_experiment):
     with open(path_experiment + 'performances.txt', 'w') as file:
         file.write(str)
 
-def evaluate_metric(y_true, y_score, mask, threshold, path_experiment):
+def visualize(data, filename):
+    img = Image.fromarray(data)
+    img.save(filename)
+
+def evaluate_metric(y_true, y_score, original_image, mask, threshold, path_experiment):
     """
     Evaluate.
     :param y_true: shape = (-1, 584, 565, 1)
@@ -42,23 +47,24 @@ def evaluate_metric(y_true, y_score, mask, threshold, path_experiment):
     :param path_experiment:
     :return:
     """
+    image_data = np.concatenate((np.concatenate(original_image[0:5], axis=1),
+                                 np.concatenate(y_true[0:5], axis=1),
+                                 np.concatenate(y_score[0:5], axis=1)), axis=0)
+
+    visualize(image_data, path_experiment + '/result_image.png')
+
     # 1\ Get the masked y_score.
     y_score = y_score[:, :, :, 1]
     y_true = y_true[:, :, :, 0]
-    mask = mask[:, :, :, 0]/255
+    mask = mask[:, :, :, 0]
     new_y_score = []
     new_y_true = []
     for i in range(y_true.shape[0]):
-        temp_y_score = []
-        temp_y_true = []
         for j in range(y_true.shape[1]):
             for k in range(y_true.shape[2]):
                 if mask[i, j, k] == 255:
-                    temp_y_score.append(y_score[i, j, k])
-                    temp_y_true.append(y_true[i, j, k])
-
-        new_y_score.append(temp_y_score)
-        new_y_true.append(temp_y_true)
+                    new_y_score.append(y_score[i, j, k])
+                    new_y_true.append(y_true[i, j, k])
 
     # 2\ Get the AUROC and AUPR.
     AUROC = plot_roc_curve(y_true, y_score, path_experiment)
@@ -79,11 +85,11 @@ def evaluate_metric(y_true, y_score, mask, threshold, path_experiment):
     metric_str = 'Area under ROC curve: ' + str(AUROC) + '\n' + \
                  'Area under PR curve: ' + str(AUPR) + '\n\n\n' + \
                  'For threshold: ' + str(threshold) + '\n' + \
-                 'Confusion Matrix: ' + str(confusion) + '\n' + \
-                 'Jaccard similarity score: ' + str(jaccard_index) + '\n' + \
-                 'F1 score (F-measure): ' + str(f1_score_value) + '\n' + \
-                 'Accuracy: ' + str(accuracy) + '\n' + \
-                 'Sensitivity: ' + str(sensitivity) + '\n' + \
-                 'Specificity: ' + str(specificity) + '\n' + \
-                 'Precision: ' + str(precision)
+                 '  Confusion Matrix: ' + str(confusion) + '\n' + \
+                 '  Jaccard similarity score: ' + str(jaccard_index) + '\n' + \
+                 '  F1 score (F-measure): ' + str(f1_score_value) + '\n' + \
+                 '  Accuracy: ' + str(accuracy) + '\n' + \
+                 '  Sensitivity: ' + str(sensitivity) + '\n' + \
+                 '  Specificity: ' + str(specificity) + '\n' + \
+                 '  Precision: ' + str(precision)
     write_metric(metric_str, path_experiment)

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import h5py
 import numpy as np
-from PIL import Image
 
 def load_hdf5(in_file):
   with h5py.File(in_file, 'r') as file:
@@ -10,10 +9,6 @@ def load_hdf5(in_file):
 def write_hdf5(data, out_file):
   with h5py.File(out_file, 'w') as file:
     file.create_dataset('data', data=data, dtype=data.dtype)
-
-def visualize(data, filename):
-    img = Image.fromarray(data)
-    img.save(filename)
 
 def recompose_overlap(preds, patch_h, patch_w, stride_h, stride_w, n_h, n_w, num_image=20, full_height=584, full_width=565):
     full_prob = np.zeros((num_image, patch_h+stride_h*(n_h-1), patch_w+stride_w*(n_w-1), 2))

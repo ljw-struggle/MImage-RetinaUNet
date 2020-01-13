@@ -70,12 +70,8 @@ def test(config):
     ground_truth = load_hdf5(test_ground_truth)
     border_mask = load_hdf5(test_border_mask)
 
-    image_data = np.concatenate((np.concatenate(original_image[0:5], axis=1),
-                                 np.concatenate(original_image[0:5], axis=1),
-                                 np.concatenate(original_image[0:5], axis=1)), axis=0)
-
-    visualize(image_data, './result/' + name_experiment + '/result_image.png')
-    evaluate_metric(ground_truth, pred_image, border_mask, threshold=0.5, path_experiment='./result/' + name_experiment)
+    evaluate_metric(ground_truth, pred_image, original_image, border_mask,
+                    threshold=0.5, path_experiment='./result/' + name_experiment)
 
 if __name__ == '__main__':
     # 1\ Argument Parse

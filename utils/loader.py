@@ -15,9 +15,9 @@ class loader(object):
         # 1\ Processing
         processed_images = self.preprocess(original_images) # shape = (-1, 584, 565, 1)
         ground_truths = np.zeros((raw_ground_truths.shape[0], 584, 565, 2))  # shape = (-1, 584, 565, 2)
-        ground_truths[:, 584, 565, 0] = 1 - raw_ground_truths / 255.
-        ground_truths[:, 584, 565, 1] = raw_ground_truths / 255.
-        masks = masks/255. # shape = (-1, 584, 565, 1)
+        ground_truths[:, 584, 565, 0] = 1 - raw_ground_truths
+        ground_truths[:, 584, 565, 1] = raw_ground_truths
+        masks = masks # shape = (-1, 584, 565, 1)
 
         # 2\ Divide to patches.
         num_patch_per_img = num_patch / processed_images.shape[0]
