@@ -32,13 +32,41 @@ def write_metric(str, path_experiment):
     with open(path_experiment + 'performances.txt', 'w') as file:
         file.write(str)
 
-def evaluate_metric(y_true, y_score, path_experiment):
+def evaluate_metric(y_true, y_score, mask, threshold, path_experiment):
+    """
+    Evaluate.
+    :param y_true: shape = (-1, 584, 565, 1)
+    :param y_score: shape = (-1, 584, 565, 2)
+    :param mask: shape = (-1, 584, 565, 1)
+    :param threshold:
+    :param path_experiment:
+    :return:
+    """
+    # 1\ Get the masked y_score.
+    y_score = y_score[:, :, :, 1]
+    y_true = y_true[:, :, :, 0]
+    mask = mask[:, :, :, 0]/255
+    new_y_score = []
+    new_y_true = []
+    for i in range(y_true.shape[0]):
+        temp_y_score = []
+        temp_y_true = []
+        for j in range(y_true.shape[1]):
+            for k in range(y_true.shape[2]):
+                if mask[i, j, k] == 255:
+                    temp_y_score.append(y_score[i, j, k])
+                    temp_y_true.append(y_true[i, j, k])
+
+        new_y_score.append(temp_y_score)
+        new_y_true.append(temp_y_true)
+
+    # 2\ Get the AUROC and AUPR.
     AUROC = plot_roc_curve(y_true, y_score, path_experiment)
     AUPR = plot_pr_curve(y_true, y_score, path_experiment)
 
-    threshold_confusion = 0.5
-    y_pred = np.zeros((y_score.shape[0]))
-    y_pred[y_score>threshold_confusion] = 1
+    # 3\ Get the confusion matrix.
+    y_pred = np.zeros((y_score.shap))
+    y_pred[y_score>threshold] = 1
 
     confusion = confusion_matrix(y_true, y_pred)
     jaccard_index = jaccard_score(y_true, y_pred)

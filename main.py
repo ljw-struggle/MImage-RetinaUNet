@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, shutil, random, configparser, argparse
+import configparser, argparse
 from keras.models import model_from_json
 from keras.utils.vis_utils import plot_model as plot
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
@@ -8,16 +8,13 @@ from utils.loader import *
 from utils.utils import *
 from utils.metric import *
 
-os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz2.38/bin/'
 random.seed(10)
-shutil.copy('file', 'file_dir')
-num_image, height, width, channel = 20, 584, 565, 3
 
 def train(config):
     name_experiment      = config.get('Experiment Name', 'name')
     train_original_image = config.get('Data Attribute', 'train_original_image')
     train_ground_truth   = config.get('Data Attribute', 'train_ground_truth')
-    train_border_mask   = config.get('Data Attribute', 'train_border_mask')
+    train_border_mask    = config.get('Data Attribute', 'train_border_mask')
     patch_height         = config.getint('Data Attribute', 'patch_height')
     patch_width          = config.getint('Data Attribute', 'patch_width')
     num_patch            = config.getint('Training Setting', 'num_patch')
@@ -56,51 +53,25 @@ def test(config):
     stride_width        = config.getint('Test Setting', 'stride_width')
 
     if average_mode == True:
-        gt_img = load_hdf5(test_ground_truth)
         patches_img_test, n_h, n_w, num = loader.get_data_testing_overlap(
             original_image_path=test_original_image, patch_height=patch_height,
             patch_width=patch_width, stride_height=stride_height, stride_width=stride_width)
         model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
         model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
         pred_patches = model.predict(patches_img_test, batch_size=32, verbose=2)
-        pred_patches = int(pred_patches[:, :, :, 1] > 0.5)
-        pred_img = recompose_overlap(pred_patches, patch_height, patch_width, stride_height, stride_width,
+        pred_image = recompose_overlap(pred_patches, patch_height, patch_width, stride_height, stride_width,
                                      n_h, n_w, num, 584, 565)
     else:
-        gt_img = load_hdf5(test_ground_truth)
-        patches_img_test, n_h, b_w, num = loader.get_data_testing(
+        patches_img_test, n_h, n_w, num = loader.get_data_testing(
             original_image_path=test_original_image, patch_height=patch_height, patch_width=patch_width)
         model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
         model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
         pred_patches = model.predict(patches_img_test, batch_size=32, verbose=2)
-        pred_patches= int(pred_patches[:, :, :, 1] > 0.5)
-        pred_img = recompose(pred_patches, patch_height, patch_width, n_h, n_w, num, 584, 565)
+        pred_image = recompose(pred_patches, patch_height, patch_width, n_h, n_w, num, 584, 565)
 
-    test_border_mask = load_hdf5(test_border_mask)
-
-    height = data.shape[2]
-    width = data.shape[3]
-    for i in range(data.shape[0]):
-        for x in range(width):
-            for y in range(height):
-                if inside_FOV_DRIVE(i, x, y, original_imgs_border_masks) == False:
-                    data[i, :, y, x] = 0.0
-
-    height = data_imgs.shape[2]
-    width = data_imgs.shape[3]
-    new_pred_imgs = []
-    new_pred_masks = []
-    for i in range(data_imgs.shape[0]):
-        for x in range(width):
-            for y in range(height):
-                if inside_FOV_DRIVE(i, x, y, original_imgs_border_masks) == True:
-                    new_pred_imgs.append(data_imgs[i, :, y, x])
-                    new_pred_masks.append(data_masks[i, :, y, x])
-    new_pred_imgs = np.asarray(new_pred_imgs)
-    new_pred_masks = np.asarray(new_pred_masks)
-    return new_pred_imgs, new_pred_masks
-    y_score, y_true = pred_only_FOV(pred_img[:, 0:584, 0:565, :], gt_img[:, 0:584, 0:565, :], test_border_mask)
-    evaluate_metric(y_true, y_score, './result/' + name_experiment)
+    ground_truth = load_hdf5(test_ground_truth)
+    border_mask = load_hdf5(test_border_mask)
+    evaluate_metric(ground_truth, pred_image, border_mask, threshold=0.5, path_experiment='./result/' + name_experiment)
 
 if __name__ == '__main__':
     # 1\ Argument Parse

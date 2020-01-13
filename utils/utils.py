@@ -33,39 +33,22 @@ def visualize(data,filename):
         img = Image.fromarray((data*255).astype(np.uint8))
     img.save(filename + '.png')
 
-def recompose_overlap(preds, img_h, img_w, stride_h, stride_w):
-    patch_h = preds.shape[2]
-    patch_w = preds.shape[3]
-    N_patches_h = (img_h-patch_h)//stride_h+1
-    N_patches_w = (img_w-patch_w)//stride_w+1
-    N_patches_img = N_patches_h * N_patches_w
-    N_full_imgs = preds.shape[0]//N_patches_img
+def recompose_overlap(preds, patch_h, patch_w, stride_h, stride_w, n_h, n_w, num, full_height=584, full_width=565):
     full_prob = np.zeros((N_full_imgs,preds.shape[1],img_h,img_w))
     full_sum = np.zeros((N_full_imgs,preds.shape[1],img_h,img_w))
-    k = 0
     for i in range(N_full_imgs):
         for h in range((img_h-patch_h)//stride_h+1):
             for w in range((img_w-patch_w)//stride_w+1):
                 full_prob[i,:,h*stride_h:(h*stride_h)+patch_h,w*stride_w:(w*stride_w)+patch_w]+=preds[k]
                 full_sum[i,:,h*stride_h:(h*stride_h)+patch_h,w*stride_w:(w*stride_w)+patch_w]+=1
-                k+=1
-    final_avg = full_prob/full_sum
-    print(final_avg.shape)
     return final_avg
 
-def recompose(data,N_h,N_w):
-    N_pacth_per_img = N_w*N_h
-    N_full_imgs = data.shape[0]/N_pacth_per_img
-    patch_h = data.shape[2]
-    patch_w = data.shape[3]
+def recompose(preds, patch_h, patch_w, n_h, n_w, num, full_height=584, full_width=565):
     full_recomp = np.empty((N_full_imgs,data.shape[1],N_h*patch_h,N_w*patch_w))
-    k, s = 0, 0
     while (s<data.shape[0]):
         single_recon = np.empty((data.shape[1],N_h*patch_h,N_w*patch_w))
         for h in range(N_h):
             for w in range(N_w):
                 single_recon[:,h*patch_h:(h*patch_h)+patch_h,w*patch_w:(w*patch_w)+patch_w]=data[s]
-                s+=1
         full_recomp[k]=single_recon
-        k+=1
     return full_recomp
