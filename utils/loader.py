@@ -4,8 +4,6 @@ import random
 from utils.utils import *
 import numpy as np
 
-num_image, height, width, channel = 20, 584, 565, 3
-
 class loader(object):
     @classmethod
     def get_data_training(self, original_image_path, ground_truth_path, border_mask_path,
@@ -63,7 +61,7 @@ class loader(object):
                         new_images[i, h*patch_height:(h+1)*patch_height, w*patch_width:(w+1)*patch_width, :]
                     processed_image_patches.append(processed_image_patch)
 
-        return processed_image_patches, num_patch_height, num_patch_width, new_images.shape[0]
+        return processed_image_patches, num_patch_height, num_patch_width, original_images.shape[0]
 
     @classmethod
     def get_data_testing_overlap(self, original_image_path, patch_height, patch_width, stride_height, stride_width):
@@ -89,7 +87,7 @@ class loader(object):
                     processed_image_patch = new_images[i, h*stride_height:h*stride_height+patch_height,
                                                        w*stride_width:w*stride_width+patch_width, :]
                     processed_image_patches.append(processed_image_patch)
-        return processed_image_patches, num_patch_height, num_patch_width, new_images.shape[0]
+        return processed_image_patches, num_patch_height, num_patch_width, original_images.shape[0]
 
     @staticmethod
     def preprocess(data, gamma=1.2):

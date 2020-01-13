@@ -85,7 +85,7 @@ def evaluate_metric(y_true, y_score, mask, threshold, path_experiment):
 
     metric_str = 'Area under ROC curve: ' + str(AUROC) + '\n' + \
                  'Area under PR curve: ' + str(AUPR) + '\n\n\n' + \
-                 'For threshold: ' + str(threshold_confusion) + '\n' + \
+                 'For threshold: ' + str(threshold) + '\n' + \
                  'Confusion Matrix: ' + str(confusion) + '\n' + \
                  'Jaccard similarity score: ' + str(jaccard_index) + '\n' + \
                  'F1 score (F-measure): ' + str(f1_score_value) + '\n' + \

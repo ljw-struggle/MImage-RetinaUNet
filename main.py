@@ -26,9 +26,6 @@ def train(config):
         original_image_path=train_original_image, ground_truth_path=train_ground_truth, border_mask_path=train_border_mask,
         patch_height=patch_height, patch_width=patch_width, num_patch=num_patch, inside_FOV=inside_FOV)
 
-    visualize(group_images(patches_img_train[0:40, :, :, :], 5), './result/' + name_experiment + '/sample_input_img')
-    visualize(group_images(patches_gt_train[0:40, :, :, 0:1], 5), './result/' + name_experiment + '/sample_input_gt')
-
     model = get_unet_model(patch_height, patch_width, 1)
     model.to_json(fp = open('./result/' + name_experiment + '/architecture.json', 'w'))
     plot(model, to_file='./result/' + name_experiment + '/model.png')
@@ -47,30 +44,37 @@ def test(config):
     test_border_mask    = config.get('Data Attribute', 'test_border_mask')
     patch_height        = config.getint('Data Attribute', 'patch_height')
     patch_width         = config.getint('Data Attribute', 'patch_width')
-    best_last           = config.get('Test Setting', 'best_last')
-    average_mode        = config.getboolean('Test Setting', 'average_mode')
     stride_height       = config.getint('Test Setting', 'stride_height')
     stride_width        = config.getint('Test Setting', 'stride_width')
+    average_mode        = config.getboolean('Test Setting', 'average_mode')
+    best_last           = config.get('Test Setting', 'best_last')
 
     if average_mode == True:
-        patches_img_test, n_h, n_w, num = loader.get_data_testing_overlap(
+        patches_img_test, n_h, n_w, num_image = loader.get_data_testing_overlap(
             original_image_path=test_original_image, patch_height=patch_height,
             patch_width=patch_width, stride_height=stride_height, stride_width=stride_width)
         model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
         model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
         pred_patches = model.predict(patches_img_test, batch_size=32, verbose=2)
         pred_image = recompose_overlap(pred_patches, patch_height, patch_width, stride_height, stride_width,
-                                     n_h, n_w, num, 584, 565)
+                                     n_h, n_w, num_image, 584, 565)
     else:
-        patches_img_test, n_h, n_w, num = loader.get_data_testing(
+        patches_img_test, n_h, n_w, num_image = loader.get_data_testing(
             original_image_path=test_original_image, patch_height=patch_height, patch_width=patch_width)
         model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
         model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
         pred_patches = model.predict(patches_img_test, batch_size=32, verbose=2)
-        pred_image = recompose(pred_patches, patch_height, patch_width, n_h, n_w, num, 584, 565)
+        pred_image = recompose(pred_patches, patch_height, patch_width, n_h, n_w, num_image, 584, 565)
 
+    original_image = load_hdf5(test_original_image)
     ground_truth = load_hdf5(test_ground_truth)
     border_mask = load_hdf5(test_border_mask)
+
+    image_data = np.concatenate((np.concatenate(original_image[0:5], axis=1),
+                                 np.concatenate(original_image[0:5], axis=1),
+                                 np.concatenate(original_image[0:5], axis=1)), axis=0)
+
+    visualize(image_data, './result/' + name_experiment + '/result_image.png')
     evaluate_metric(ground_truth, pred_image, border_mask, threshold=0.5, path_experiment='./result/' + name_experiment)
 
 if __name__ == '__main__':
