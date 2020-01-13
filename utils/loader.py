@@ -9,14 +9,12 @@ class loader(object):
     def get_data_training(self, original_image_path, ground_truth_path, border_mask_path,
                           patch_height, patch_width, num_patch, inside_FOV=False):
         original_images = load_hdf5(original_image_path) # shape = (-1, 584, 565, 3)
-        raw_ground_truths = load_hdf5(ground_truth_path) # shape = (-1, 584, 565, 1)
+        ground_truths = load_hdf5(ground_truth_path) # shape = (-1, 584, 565, 1)
         masks = load_hdf5(border_mask_path) # shape = (-1, 584, 565, 1)
 
         # 1\ Processing
         processed_images = self.preprocess(original_images) # shape = (-1, 584, 565, 1)
-        ground_truths = np.zeros((raw_ground_truths.shape[0], 584, 565, 2))  # shape = (-1, 584, 565, 2)
-        ground_truths[:, 584, 565, 0] = 1 - raw_ground_truths
-        ground_truths[:, 584, 565, 1] = raw_ground_truths
+        ground_truths = ground_truths # shape = (-1, 584, 565, 1)
         masks = masks # shape = (-1, 584, 565, 1)
 
         # 2\ Divide to patches.

@@ -41,20 +41,26 @@ def evaluate_metric(y_true, y_score, original_image, mask, threshold, path_exper
     """
     Evaluate.
     :param y_true: shape = (-1, 584, 565, 1)
-    :param y_score: shape = (-1, 584, 565, 2)
+    :param y_score: shape = (-1, 584, 565, 1)
+    :param original_image: shape = (-1, 584, 565, 3)
     :param mask: shape = (-1, 584, 565, 1)
     :param threshold:
     :param path_experiment:
     :return:
     """
-    image_data = np.concatenate((np.concatenate(original_image[0:5], axis=1),
-                                 np.concatenate(y_true[0:5], axis=1),
-                                 np.concatenate(y_score[0:5], axis=1)), axis=0)
-
+    score_image = np.zeros((len(y_score), 584, 565, 3))
+    score_image[y_score>=0.5] = [255, 255, 255]
+    score_image[y_score<0.5] = [0, 0, 0]
+    true_image = np.zeros((len(y_score), 584, 565, 3))
+    true_image[y_true==1] = [255, 255, 255]
+    true_image[y_true==0] = [0, 0, 0]
+    image_data = np.concatenate((np.concatenate(original_image[0:5], axis=2),
+                                 np.concatenate(true_image[0:5], axis=2),
+                                 np.concatenate(score_image[0:5], axis=2)), axis=1)
     visualize(image_data, path_experiment + '/result_image.png')
 
     # 1\ Get the masked y_score.
-    y_score = y_score[:, :, :, 1]
+    y_score = y_score[:, :, :, 0]
     y_true = y_true[:, :, :, 0]
     mask = mask[:, :, :, 0]
     new_y_score = []
@@ -62,16 +68,19 @@ def evaluate_metric(y_true, y_score, original_image, mask, threshold, path_exper
     for i in range(y_true.shape[0]):
         for j in range(y_true.shape[1]):
             for k in range(y_true.shape[2]):
-                if mask[i, j, k] == 255:
+                if mask[i, j, k] == 1:
                     new_y_score.append(y_score[i, j, k])
                     new_y_true.append(y_true[i, j, k])
 
+    new_y_true = np.array(new_y_true)
+    new_y_score = np.array(new_y_score)
+
     # 2\ Get the AUROC and AUPR.
-    AUROC = plot_roc_curve(y_true, y_score, path_experiment)
-    AUPR = plot_pr_curve(y_true, y_score, path_experiment)
+    AUROC = plot_roc_curve(new_y_true, new_y_score, path_experiment)
+    AUPR = plot_pr_curve(new_y_true, new_y_score, path_experiment)
 
     # 3\ Get the confusion matrix.
-    y_pred = np.zeros((y_score.shap))
+    y_pred = np.zeros((new_y_score.shape))
     y_pred[y_score>threshold] = 1
 
     confusion = confusion_matrix(y_true, y_pred)

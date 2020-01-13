@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, UpSampling2D, \
-    Input, Concatenate, Reshape, Permute, Activation, Dropout
+    Input, Concatenate, Activation, Dropout
 from tensorflow.keras.optimizers import SGD
 
 def get_unet_model(patch_height, patch_width, patch_channel):
@@ -27,9 +27,9 @@ def get_unet_model(patch_height, patch_width, patch_channel):
     conv5 = Conv2D(32, (3, 3), activation='relu', padding='same')(up2)
     conv5 = Dropout(0.2)(conv5)
     conv5 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv5)
-    conv6 = Conv2D(2, (1, 1), activation='relu', padding='same')(conv5)
+    conv6 = Conv2D(1, (1, 1), activation='relu', padding='same')(conv5)
     conv7 = Activation('softmax')(conv6)
     model = Model(inputs=inputs, outputs=conv7)
     optimizer = SGD(lr=0.01, decay=1e-6, momentum=0.3, nesterov=False)
-    model.compile(optimizer=optimizer, loss='categorical_crossentropy',metrics=['accuracy'])
+    model.compile(optimizer=optimizer, loss='binary_crossentropy',metrics=['accuracy'])
     return model

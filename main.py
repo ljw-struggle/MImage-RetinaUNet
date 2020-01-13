@@ -66,8 +66,9 @@ def test(config):
         pred_patches = model.predict(patches_img_test, batch_size=32, verbose=2)
         pred_image = recompose(pred_patches, patch_height, patch_width, n_h, n_w, num_image, 584, 565)
 
-    original_image = load_hdf5(test_original_image)
     ground_truth = load_hdf5(test_ground_truth)
+    pred_image = pred_image
+    original_image = load_hdf5(test_original_image)
     border_mask = load_hdf5(test_border_mask)
 
     evaluate_metric(ground_truth, pred_image, original_image, border_mask,
