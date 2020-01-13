@@ -70,18 +70,11 @@ def evaluate_metric(y_true, y_score, mask, threshold, path_experiment):
 
     confusion = confusion_matrix(y_true, y_pred)
     jaccard_index = jaccard_score(y_true, y_pred)
-    f1_score_value = f1_score(y_true, y_pred, labels=None, average='binary', sample_weight=None)
-    accuracy, specificity, sensitivity, precision = 0, 0, 0, 0
-    if float(np.sum(confusion)) != 0:
-        accuracy = float(confusion[0, 0] + confusion[1, 1]) / float(np.sum(confusion))
-    if float(confusion[0, 0] + confusion[0, 1]) != 0:
-        specificity = float(confusion[0, 0]) / float(confusion[0, 0] + confusion[0, 1])
-    if float(confusion[1, 1] + confusion[1, 0]) != 0:
-        sensitivity = float(confusion[1, 1]) / float(confusion[1, 1] + confusion[1, 0])
-    if float(confusion[1, 1] + confusion[0, 1]) != 0:
-        precision = float(confusion[1, 1]) / float(confusion[1, 1] + confusion[0, 1])
-
-    classification_report(y_true, y_pred)
+    f1_score_value = f1_score(y_true, y_pred)
+    accuracy = float(confusion[0, 0] + confusion[1, 1]) / float(np.sum(confusion))
+    specificity = float(confusion[0, 0]) / float(confusion[0, 0] + confusion[0, 1])
+    sensitivity = float(confusion[1, 1]) / float(confusion[1, 1] + confusion[1, 0])
+    precision = float(confusion[1, 1]) / float(confusion[1, 1] + confusion[0, 1])
 
     metric_str = 'Area under ROC curve: ' + str(AUROC) + '\n' + \
                  'Area under PR curve: ' + str(AUPR) + '\n\n\n' + \

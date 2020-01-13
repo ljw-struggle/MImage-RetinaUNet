@@ -26,10 +26,16 @@ def get_data(original_image_dir, ground_truth_dir, border_mask_dir):
         ground_truths.append(np.asarray(ground_truth))
         border_masks.append(np.asarray(border_mask))
 
-    height, width = 584, 565
-    original_images = np.reshape(original_images, (-1, height, width, 3))
-    ground_truths = np.reshape(ground_truths, (-1, height, width, 1))
-    border_masks = np.reshape(border_masks, (-1, height, width, 1))
+    original_images = np.array(original_images)
+    ground_truths = np.array(ground_truths)
+    border_masks = np.array(border_masks)
+
+    ground_truths = (ground_truths/255).astype(np.uint8)
+    border_masks = (border_masks/255).astype(np.uint8)
+
+    original_images = np.reshape(original_images, (-1, 584, 565, 3))
+    ground_truths = np.reshape(ground_truths, (-1, 584, 565, 1))
+    border_masks = np.reshape(border_masks, (-1, 584, 565, 1))
     return original_images, ground_truths, border_masks
 
 if __name__ == '__main__':
