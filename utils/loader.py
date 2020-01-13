@@ -18,7 +18,7 @@ class loader(object):
         masks = masks # shape = (-1, 584, 565, 1)
 
         # 2\ Divide to patches.
-        num_patch_per_img = num_patch / processed_images.shape[0]
+        num_patch_per_img = int(num_patch / processed_images.shape[0])
         processed_image_patches, ground_truth_patches = [], []
         for i in range(processed_images.shape[0]):
             for k in range(num_patch_per_img):
@@ -33,7 +33,7 @@ class loader(object):
                 processed_image_patches.append(processed_image_patch)
                 ground_truth_patches.append(ground_truth_patch)
 
-        return processed_image_patches, ground_truth_patches
+        return np.array(processed_image_patches), np.array(ground_truth_patches)
 
     @classmethod
     def get_data_testing(self, original_image_path, patch_height, patch_width):
@@ -43,15 +43,15 @@ class loader(object):
         processed_images = self.preprocess(original_images) # shape = (-1, 584, 565, 1)
 
         # 2\ Paint Border.
-        new_height = np.ceil(584/patch_height)*patch_height
-        new_width = np.ceil(565/patch_width)*patch_width
+        new_height = int(np.ceil(584/patch_height)*patch_height)
+        new_width = int(np.ceil(565/patch_width)*patch_width)
         new_images = np.zeros((processed_images.shape[0], new_height, new_width, 1))
         new_images[:, 0:584, 0:565, :] = processed_images
 
         # 3\ Divide to patches.
         processed_image_patches = []
         num_sample = new_images.shape[0]
-        num_patch_height, num_patch_width = new_height / patch_height, new_width / patch_width
+        num_patch_height, num_patch_width = int(new_height / patch_height), int(new_width / patch_width)
         for i in range(num_sample):
             for h in range(num_patch_height):
                 for w in range(num_patch_width):
@@ -59,7 +59,7 @@ class loader(object):
                         new_images[i, h*patch_height:(h+1)*patch_height, w*patch_width:(w+1)*patch_width, :]
                     processed_image_patches.append(processed_image_patch)
 
-        return processed_image_patches, num_patch_height, num_patch_width, original_images.shape[0]
+        return np.array(processed_image_patches), num_patch_height, num_patch_width, original_images.shape[0]
 
     @classmethod
     def get_data_testing_overlap(self, original_image_path, patch_height, patch_width, stride_height, stride_width):
@@ -69,23 +69,23 @@ class loader(object):
         processed_images = self.preprocess(original_images) # shape = (-1, 584, 565, 1)
 
         # 2\ Paint Border.
-        new_height = np.ceil((584 - patch_height) / stride_height) * stride_height + patch_height
-        new_width = np.ceil((565 - patch_width) / stride_width) * stride_width + patch_width
+        new_height = int(np.ceil((584 - patch_height) / stride_height) * stride_height + patch_height)
+        new_width = int(np.ceil((565 - patch_width) / stride_width) * stride_width + patch_width)
         new_images = np.zeros((processed_images.shape[0], new_height, new_width, 1))
         new_images[:, 0:584, 0:565, :] = processed_images
 
         # 3\ Divide to patches.
         processed_image_patches = []
         num_sample = new_images.shape[0]
-        num_patch_height, num_patch_width = (new_height-patch_height)/stride_height + 1, \
-                                            (new_height-patch_width)/stride_width + 1
+        num_patch_height, num_patch_width = int((new_height-patch_height)/stride_height + 1), \
+                                            int((new_width-patch_width)/stride_width + 1)
         for i in range(num_sample):
             for h in range(num_patch_height):
                 for w in range(num_patch_width):
                     processed_image_patch = new_images[i, h*stride_height:h*stride_height+patch_height,
                                                        w*stride_width:w*stride_width+patch_width, :]
                     processed_image_patches.append(processed_image_patch)
-        return processed_image_patches, num_patch_height, num_patch_width, original_images.shape[0]
+        return np.array(processed_image_patches), num_patch_height, num_patch_width, original_images.shape[0]
 
     @staticmethod
     def preprocess(data, gamma=1.2):

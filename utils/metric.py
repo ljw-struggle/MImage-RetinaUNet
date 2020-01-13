@@ -11,10 +11,10 @@ def plot_roc_curve(y_true, y_score, path_experiment):
     plt.figure()
     plt.plot(fpr, tpr, '-', label='AUROC = %0.4f' % AUROC)
     plt.title('ROC curve')
-    plt.xlabel("FPR (False Positive Rate)")
-    plt.ylabel("TPR (True Positive Rate)")
-    plt.legend(loc="lower right")
-    plt.savefig(path_experiment + "ROC.png")
+    plt.xlabel('FPR (False Positive Rate)')
+    plt.ylabel('TPR (True Positive Rate)')
+    plt.legend(loc='lower right')
+    plt.savefig(path_experiment + '\ROC.png')
     return AUROC
 
 def plot_pr_curve(y_true, y_score, path_experiment):
@@ -23,14 +23,14 @@ def plot_pr_curve(y_true, y_score, path_experiment):
     plt.figure()
     plt.plot(recall, precision, '-', label='AUPR = %0.4f' % AUPR)
     plt.title('Precision - Recall curve')
-    plt.xlabel("Recall")
-    plt.ylabel("Precision")
-    plt.legend(loc="lower right")
-    plt.savefig(path_experiment + "PR.png")
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.legend(loc='lower right')
+    plt.savefig(path_experiment + '\PR.png')
     return AUPR
 
 def write_metric(str, path_experiment):
-    with open(path_experiment + 'performances.txt', 'w') as file:
+    with open(path_experiment + '\performances.txt', 'w') as file:
         file.write(str)
 
 def visualize(data, filename):
@@ -48,15 +48,24 @@ def evaluate_metric(y_true, y_score, original_image, mask, threshold, path_exper
     :param path_experiment:
     :return:
     """
+    true_image = np.zeros((len(y_true), 584, 565, 3))
+    true_image[:, :, :, 0:1][y_true >= 0.5] = 255
+    true_image[:, :, :, 1:2][y_true >= 0.5] = 255
+    true_image[:, :, :, 2:3][y_true >= 0.5] = 255
+    true_image[:, :, :, 0:1][y_true < 0.5] = 0
+    true_image[:, :, :, 1:2][y_true < 0.5] = 0
+    true_image[:, :, :, 2:3][y_true < 0.5] = 0
     score_image = np.zeros((len(y_score), 584, 565, 3))
-    score_image[y_score>=0.5] = [255, 255, 255]
-    score_image[y_score<0.5] = [0, 0, 0]
-    true_image = np.zeros((len(y_score), 584, 565, 3))
-    true_image[y_true==1] = [255, 255, 255]
-    true_image[y_true==0] = [0, 0, 0]
-    image_data = np.concatenate((np.concatenate(original_image[0:5], axis=2),
-                                 np.concatenate(true_image[0:5], axis=2),
-                                 np.concatenate(score_image[0:5], axis=2)), axis=1)
+    score_image[:, :, :, 0:1][y_score >= 0.5] = 255
+    score_image[:, :, :, 1:2][y_score >= 0.5] = 255
+    score_image[:, :, :, 2:3][y_score >= 0.5] = 255
+    score_image[:, :, :, 0:1][y_score < 0.5] = 0
+    score_image[:, :, :, 1:2][y_score < 0.5] = 0
+    score_image[:, :, :, 2:3][y_score < 0.5] = 0
+    score_image = score_image*mask
+    image_data = np.concatenate((np.concatenate(original_image[0:5].astype(np.uint8), axis=1),
+                                 np.concatenate(true_image[0:5].astype(np.uint8), axis=1),
+                                 np.concatenate(score_image[0:5].astype(np.uint8), axis=1)), axis=0)
     visualize(image_data, path_experiment + '/result_image.png')
 
     # 1\ Get the masked y_score.
@@ -81,20 +90,20 @@ def evaluate_metric(y_true, y_score, original_image, mask, threshold, path_exper
 
     # 3\ Get the confusion matrix.
     y_pred = np.zeros((new_y_score.shape))
-    y_pred[y_score>threshold] = 1
+    y_pred[new_y_score>=threshold] = 1
 
-    confusion = confusion_matrix(y_true, y_pred)
-    jaccard_index = jaccard_score(y_true, y_pred)
-    f1_score_value = f1_score(y_true, y_pred)
+    confusion = confusion_matrix(new_y_true, y_pred)
+    jaccard_index = jaccard_score(new_y_true, y_pred)
+    f1_score_value = f1_score(new_y_true, y_pred)
     accuracy = float(confusion[0, 0] + confusion[1, 1]) / float(np.sum(confusion))
     specificity = float(confusion[0, 0]) / float(confusion[0, 0] + confusion[0, 1])
     sensitivity = float(confusion[1, 1]) / float(confusion[1, 1] + confusion[1, 0])
     precision = float(confusion[1, 1]) / float(confusion[1, 1] + confusion[0, 1])
 
     metric_str = 'Area under ROC curve: ' + str(AUROC) + '\n' + \
-                 'Area under PR curve: ' + str(AUPR) + '\n\n\n' + \
+                 'Area under PR curve: ' + str(AUPR) + '\n\n' + \
                  'For threshold: ' + str(threshold) + '\n' + \
-                 '  Confusion Matrix: ' + str(confusion) + '\n' + \
+                 '  Confusion Matrix: ' + '\n' + str(confusion) + '\n' + \
                  '  Jaccard similarity score: ' + str(jaccard_index) + '\n' + \
                  '  F1 score (F-measure): ' + str(f1_score_value) + '\n' + \
                  '  Accuracy: ' + str(accuracy) + '\n' + \
