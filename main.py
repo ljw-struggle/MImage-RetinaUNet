@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, configparser, argparse, random
 
-from tensorflow.keras.models import model_from_json
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from model import get_unet_model
 from loader import loader
@@ -36,8 +35,6 @@ def train(config):
     model.fit(patches_img_train, patches_gt_train, epochs=num_epoch, batch_size=batch_size, shuffle=True,
               validation_split=0.1, verbose=1, callbacks=[check_pointer, lr_drop])
 
-    with open('./result/' + name_experiment + '/architecture.json', 'w') as file:
-        file.write(model.to_json())
     model.save_weights('./result/' + name_experiment + '/last_weights.h5', overwrite=True)
 
 def test(config):
@@ -55,9 +52,8 @@ def test(config):
         original_image_path=test_original_image, patch_height=patch_height,
         patch_width=patch_width, stride_height=stride_height, stride_width=stride_width)
 
-    # model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
     model = get_unet_model(patch_height, patch_width, 1)
-    # model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
+    model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
 
     pred_patches = model.predict(patches_img_test, batch_size=32, verbose=1)
     pred_image = recompose(pred_patches, patch_height, patch_width, stride_height, stride_width,

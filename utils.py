@@ -6,38 +6,6 @@ from sklearn.metrics import roc_auc_score, average_precision_score, roc_curve, p
 from matplotlib import pyplot as plt
 from PIL import Image
 
-def plot_roc_curve(y_true, y_score, path_experiment):
-    fpr, tpr, thresholds = roc_curve(y_true, y_score)
-    AUROC = roc_auc_score(y_true, y_score)
-    plt.figure()
-    plt.plot(fpr, tpr, '-', label='AUROC = %0.4f' % AUROC)
-    plt.title('ROC curve')
-    plt.xlabel('FPR (False Positive Rate)')
-    plt.ylabel('TPR (True Positive Rate)')
-    plt.legend(loc='lower right')
-    plt.savefig(path_experiment + '/roc.png')
-    return AUROC
-
-def plot_pr_curve(y_true, y_score, path_experiment):
-    precision, recall, _ = precision_recall_curve(y_true, y_score)
-    AUPR = average_precision_score(y_true, y_score)
-    plt.figure()
-    plt.plot(recall, precision, '-', label='AUPR = %0.4f' % AUPR)
-    plt.title('Precision - Recall curve')
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.legend(loc='lower right')
-    plt.savefig(path_experiment + '/pr.png')
-    return AUPR
-
-def write_metric(str, path_experiment):
-    with open(path_experiment + '/performances.txt', 'w') as file:
-        file.write(str)
-
-def visualize(data, filename):
-    img = Image.fromarray(data)
-    img.save(filename)
-
 def load_hdf5(in_file):
     with h5py.File(in_file, 'r') as file:
         return file['data'][()]
@@ -76,7 +44,8 @@ def evaluate_metric(y_true, y_score, original_image, mask, threshold, path_exper
     image_data = np.concatenate((np.concatenate(original_image[0:5].astype(np.uint8), axis=1),
                                  np.concatenate(true_image[0:5].astype(np.uint8), axis=1),
                                  np.concatenate(score_image[0:5].astype(np.uint8), axis=1)), axis=0)
-    visualize(image_data, path_experiment + '/result_image.png')
+    img = Image.fromarray(image_data)
+    img.save(path_experiment + '/result_image.png')
 
     # 1\ Flatten the y_true, y_score and Get the masked y_score.
     y_score = y_score[:, :, :, 0]
@@ -121,4 +90,29 @@ def evaluate_metric(y_true, y_score, original_image, mask, threshold, path_exper
                  '  Sensitivity: ' + str(sensitivity) + '\n' + \
                  '  Specificity: ' + str(specificity) + '\n' + \
                  '  Precision: ' + str(precision)
-    write_metric(metric_str, path_experiment)
+    with open(path_experiment + '/performances.txt', 'w') as file:
+        file.write(metric_str)
+
+def plot_roc_curve(y_true, y_score, path_experiment):
+    fpr, tpr, thresholds = roc_curve(y_true, y_score)
+    AUROC = roc_auc_score(y_true, y_score)
+    plt.figure()
+    plt.plot(fpr, tpr, '-', label='AUROC = %0.4f' % AUROC)
+    plt.title('ROC curve')
+    plt.xlabel('FPR (False Positive Rate)')
+    plt.ylabel('TPR (True Positive Rate)')
+    plt.legend(loc='lower right')
+    plt.savefig(path_experiment + '/roc.png')
+    return AUROC
+
+def plot_pr_curve(y_true, y_score, path_experiment):
+    precision, recall, _ = precision_recall_curve(y_true, y_score)
+    AUPR = average_precision_score(y_true, y_score)
+    plt.figure()
+    plt.plot(recall, precision, '-', label='AUPR = %0.4f' % AUPR)
+    plt.title('Precision - Recall curve')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.legend(loc='lower right')
+    plt.savefig(path_experiment + '/pr.png')
+    return AUPR
