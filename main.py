@@ -3,7 +3,7 @@ import os, configparser, argparse, random
 import numpy as np
 import tensorflow as tf
 from PIL import Image
-from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau
+from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau, EarlyStopping
 from model import get_unet_model
 from loader import loader
 from utils import recompose, evaluate_metric
@@ -27,13 +27,14 @@ def train(config):
     patches_img_train, patches_gt_train = loader.get_data_training(
         original_image_path=train_original_image, ground_truth_path=train_ground_truth, border_mask_path=train_border_mask,
         patch_height=patch_height, patch_width=patch_width, num_patch=num_patch, inside_mask=False)
-
+    exit(0)
     model = get_unet_model(patch_height, patch_width, 1)
 
     check_pointer = ModelCheckpoint(filepath='./result/' + name_experiment + '/best_weights.h5',
                                     verbose=1, monitor='val_loss', save_best_only=True, mode='auto')
     # lr_drop = LearningRateScheduler(lambda epoch: 0.0001*(0.9**epoch))
     lr_drop = ReduceLROnPlateau(patience=5)
+    early_stop = EarlyStopping(patience=10)
 
     image_data = np.concatenate((np.concatenate(patches_img_train[0:10, :, :, :], axis=1),
                                  np.concatenate(patches_gt_train[0:10, :, :, :], axis=1)), axis=0)
@@ -42,7 +43,7 @@ def train(config):
     img.save('./result/' + name_experiment + '/input_sample.png')
 
     model.fit(patches_img_train, patches_gt_train, epochs=num_epoch, batch_size=batch_size, shuffle=True,
-              validation_split=0.1, verbose=1, callbacks=[check_pointer, lr_drop])
+              validation_split=0.1, verbose=1, callbacks=[check_pointer, lr_drop, early_stop])
 
     model.save_weights('./result/' + name_experiment + '/last_weights.h5', overwrite=True)
 
