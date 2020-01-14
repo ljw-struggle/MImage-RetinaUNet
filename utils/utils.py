@@ -20,7 +20,7 @@ def recompose_overlap(preds, patch_h, patch_w, stride_h, stride_w, n_h, n_w, num
                 full_prob[i, h*stride_h:(h*stride_h)+patch_h,w*stride_w:(w*stride_w)+patch_w]+=preds[i*n_h*n_w+h*n_w+w]
                 full_sum[i, h*stride_h:(h*stride_h)+patch_h,w*stride_w:(w*stride_w)+patch_w]+=1
 
-    return (full_prob/full_sum)[:, full_height, full_width, :]
+    return (full_prob/full_sum)[:, 0:full_height, 0:full_width, :]
 
 def recompose(preds, patch_h, patch_w, n_h, n_w, num_image=20, full_height=584, full_width=565):
     full_prob = np.zeros((num_image, patch_h*n_h, patch_w*n_w, 1))

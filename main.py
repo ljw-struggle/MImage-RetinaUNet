@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, configparser, argparse, json
+import os, configparser, argparse
 from tensorflow.keras.models import model_from_json
 from tensorflow.keras.utils import plot_model as plot
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
