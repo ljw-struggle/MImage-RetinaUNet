@@ -57,7 +57,7 @@ def test(config):
 
     # model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
     model = get_unet_model(patch_height, patch_width, 1)
-    model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
+    # model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
 
     pred_patches = model.predict(patches_img_test, batch_size=32, verbose=1)
     pred_image = recompose(pred_patches, patch_height, patch_width, stride_height, stride_width,

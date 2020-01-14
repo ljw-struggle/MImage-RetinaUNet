@@ -15,7 +15,7 @@ def plot_roc_curve(y_true, y_score, path_experiment):
     plt.xlabel('FPR (False Positive Rate)')
     plt.ylabel('TPR (True Positive Rate)')
     plt.legend(loc='lower right')
-    plt.savefig(path_experiment + '/ROC.png')
+    plt.savefig(path_experiment + '/roc.png')
     return AUROC
 
 def plot_pr_curve(y_true, y_score, path_experiment):
@@ -27,7 +27,7 @@ def plot_pr_curve(y_true, y_score, path_experiment):
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.legend(loc='lower right')
-    plt.savefig(path_experiment + '/PR.png')
+    plt.savefig(path_experiment + '/pr.png')
     return AUPR
 
 def write_metric(str, path_experiment):
