@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, configparser, argparse
 from tensorflow.keras.models import model_from_json
-from tensorflow.keras.utils import plot_model as plot
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from model.unet_func import get_unet_model
 from utils.loader import *
@@ -49,31 +48,21 @@ def test(config):
     patch_width         = config.getint('Data Attribute', 'patch_width')
     stride_height       = config.getint('Test Setting', 'stride_height')
     stride_width        = config.getint('Test Setting', 'stride_width')
-    average_mode        = config.getboolean('Test Setting', 'average_mode')
     best_last           = config.get('Test Setting', 'best_last')
 
-    if average_mode == True:
-        patches_img_test, n_h, n_w, num_image = loader.get_data_testing_overlap(
-            original_image_path=test_original_image, patch_height=patch_height,
-            patch_width=patch_width, stride_height=stride_height, stride_width=stride_width)
-        # model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
-        model = get_unet_model(patch_height, patch_width, 1)
-        model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
-        pred_patches = model.predict(patches_img_test, batch_size=32, verbose=1)
-        print(patches_img_test[0, :, :, 0],pred_patches[0,:,:,0])
-        pred_image = recompose_overlap(pred_patches, patch_height, patch_width, stride_height, stride_width,
-                                     n_h, n_w, num_image, 584, 565)
-    else:
-        patches_img_test, n_h, n_w, num_image = loader.get_data_testing(
-            original_image_path=test_original_image, patch_height=patch_height, patch_width=patch_width)
-        # model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
-        model = get_unet_model(patch_height, patch_width, 1)
-        # model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
-        pred_patches = model.predict(patches_img_test, batch_size=32, verbose=2)
-        pred_image = recompose(pred_patches, patch_height, patch_width, n_h, n_w, num_image, 584, 565)
+    patches_img_test, n_h, n_w, num_image = loader.get_data_testing_overlap(
+        original_image_path=test_original_image, patch_height=patch_height,
+        patch_width=patch_width, stride_height=stride_height, stride_width=stride_width)
+    # model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
+    model = get_unet_model(patch_height, patch_width, 1)
+    model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
+    pred_patches = model.predict(patches_img_test, batch_size=32, verbose=1)
+    print(patches_img_test[0, :, :, 0],pred_patches[0,:,:,0])
+    pred_image = recompose(pred_patches, patch_height, patch_width, stride_height, stride_width,
+                                 n_h, n_w, num_image, 584, 565)
 
     ground_truth = load_hdf5(test_ground_truth)
-    pred_image = ground_truth
+    pred_image = pred_image
     original_image = load_hdf5(test_original_image)
     border_mask = load_hdf5(test_border_mask)
 
