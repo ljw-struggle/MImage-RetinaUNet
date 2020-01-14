@@ -22,11 +22,11 @@ class loader(object):
         processed_image_patches, ground_truth_patches = [], []
         for i in range(processed_images.shape[0]):
             for k in range(num_patch_per_img):
-                y_ = random.randint(0, 584 - patch_height)
-                x_ = random.randint(0, 565 - patch_width)
+                y_ = random.randint(0, 584 - patch_height -1)
+                x_ = random.randint(0, 565 - patch_width -1)
                 if inside_mask:
                     if masks[i, y_, x_, 0]==0 or masks[i, y_+patch_height, x_+patch_width, 0]==0 or \
-                       masks[i, y_, x_, 0]==0 or masks[i, y_+patch_height, x_+patch_width, 0]==0:
+                       masks[i, y_+patch_height, x_, 0]==0 or masks[i, y_, x_+patch_width, 0]==0:
                         continue
                 processed_image_patch = processed_images[i, y_:y_ + patch_height, x_:x_ + patch_width, :]
                 ground_truth_patch = ground_truths[i, y_:y_ + patch_height, x_:x_ + patch_width, :]

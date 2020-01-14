@@ -9,42 +9,57 @@ def get_unet_model(patch_height, patch_width, patch_channel):
     inputs = Input(shape=(patch_height, patch_width, patch_channel))
 
     # 1\ Down 1
-    conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
-    conv1 = Dropout(0.2)(conv1)
-    conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv1)
+    conv1 = Conv2D(16, (3, 3), activation='elu', padding='same')(inputs)
+    conv1 = Dropout(0.1)(conv1)
+    conv1 = Conv2D(16, (3, 3), activation='elu', padding='same')(conv1)
     pool1 = MaxPooling2D((2, 2))(conv1)
 
     # 2\ Down 2
-    conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool1)
-    conv2 = Dropout(0.2)(conv2)
-    conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(conv2)
+    conv2 = Conv2D(32, (3, 3), activation='elu', padding='same')(pool1)
+    conv2 = Dropout(0.1)(conv2)
+    conv2 = Conv2D(32, (3, 3), activation='elu', padding='same')(conv2)
     pool2 = MaxPooling2D((2, 2))(conv2)
 
-    # 3\ Middle 3
-    conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool2)
-    conv3 = Dropout(0.2)(conv3)
-    conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
+    # 3\ Down 3
+    conv3 = Conv2D(64, (3, 3), activation='elu', padding='same')(pool2)
+    conv3 = Dropout(0.1)(conv3)
+    conv3 = Conv2D(64, (3, 3), activation='elu', padding='same')(conv3)
+    pool3 = MaxPooling2D((2, 2))(conv3)
 
-    # 4\ Up 4
-    up1 = UpSampling2D(size=(2, 2))(conv3)
-    up1 = Concatenate(axis=-1)([conv2,up1])
-    conv4 = Conv2D(64, (3, 3), activation='relu', padding='same')(up1)
-    conv4 = Dropout(0.2)(conv4)
-    conv4 = Conv2D(64, (3, 3), activation='relu', padding='same')(conv4)
+    # 3\ Middle
+    conv4 = Conv2D(128, (3, 3), activation='elu', padding='same')(pool3)
+    conv4 = Dropout(0.1)(conv4)
+    conv4 = Conv2D(128, (3, 3), activation='elu', padding='same')(conv4)
 
-    # 5\ Up 5
-    up2 = UpSampling2D(size=(2, 2))(conv4)
-    up2 = Concatenate(axis=-1)([conv1,up2])
-    conv5 = Conv2D(32, (3, 3), activation='relu', padding='same')(up2)
-    conv5 = Dropout(0.2)(conv5)
-    conv5 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv5)
+    # 4\ Up 1
+    up1 = UpSampling2D(size=(2, 2))(conv4)
+    up1 = Concatenate(axis=-1)([conv3,up1])
+    conv5 = Conv2D(64, (3, 3), activation='elu', padding='same')(up1)
+    conv5 = Dropout(0.1)(conv5)
+    conv5 = Conv2D(64, (3, 3), activation='elu', padding='same')(conv5)
 
-    # 6\ Final 6
-    conv6 = Conv2D(1, (1, 1), activation='sigmoid', padding='same')(conv5)
-    outputs = conv6
+    # 6\ Up 2
+    up2 = UpSampling2D(size=(2, 2))(conv5)
+    up2 = Concatenate(axis=-1)([conv2,up2])
+    conv6 = Conv2D(32, (3, 3), activation='elu', padding='same')(up2)
+    conv6 = Dropout(0.2)(conv6)
+    conv6 = Conv2D(32, (3, 3), activation='elu', padding='same')(conv6)
+
+    # 7\ Up 3
+    up3 = UpSampling2D(size=(2, 2))(conv6)
+    up3 = Concatenate(axis=-1)([conv1, up3])
+    conv7 = Conv2D(16, (3, 3), activation='elu', padding='same')(up3)
+    conv7 = Dropout(0.2)(conv7)
+    conv7 = Conv2D(16, (3, 3), activation='elu', padding='same')(conv7)
+
+    # 8\ Final
+    conv9 = Conv2D(1, (1, 1), activation='sigmoid', padding='same')(conv7)
+    outputs = conv9
 
     model = Model(inputs=inputs, outputs=outputs)
-    model.compile(optimizer='sgd', loss='binary_crossentropy',metrics=['accuracy'])
+    model.compile(optimizer=tf.keras.optimizers.Adam(0.001),
+                  loss=tf.keras.losses.BinaryCrossentropy(),
+                  metrics=['accuracy'])
     return model
 
 class Down_Block(tf.keras.layers.Layer):
