@@ -38,9 +38,9 @@ def get_unet_model(patch_height, patch_width, patch_channel):
     conv5 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv5)
 
     # 6\ Final 6
-    conv6 = Conv2D(1, (1, 1), activation='relu', padding='same')(conv5)
-    conv7 = Activation('softmax')(conv6)
+    conv6 = Conv2D(1, (1, 1), activation='sigmoid', padding='same')(conv5)
+    outputs = conv6
 
-    model = Model(inputs=inputs, outputs=conv7)
+    model = Model(inputs=inputs, outputs=outputs)
     model.compile(optimizer='sgd', loss='binary_crossentropy',metrics=['accuracy'])
     return model

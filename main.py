@@ -33,7 +33,7 @@ def train(config):
 
     check_pointer = ModelCheckpoint(filepath='./result/' + name_experiment + '/best_weights.h5',
                                     verbose=1, monitor='val_loss', save_best_only=True, mode='auto')
-    lr_drop = LearningRateScheduler(lambda epoch: 0.005 if epoch > 100 else 0.001)
+    lr_drop = LearningRateScheduler(lambda epoch: 0.0005 if epoch > 100 else 0.001)
     model.fit(patches_img_train, patches_gt_train, epochs=num_epoch, batch_size=batch_size, shuffle=True,
               validation_split=0.1, verbose=1, callbacks=[check_pointer, lr_drop])
     with open('./result/' + name_experiment + '/architecture.json', 'w') as file:
@@ -56,21 +56,24 @@ def test(config):
         patches_img_test, n_h, n_w, num_image = loader.get_data_testing_overlap(
             original_image_path=test_original_image, patch_height=patch_height,
             patch_width=patch_width, stride_height=stride_height, stride_width=stride_width)
-        model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
+        # model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
+        model = get_unet_model(patch_height, patch_width, 1)
         model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
         pred_patches = model.predict(patches_img_test, batch_size=32, verbose=1)
+        print(patches_img_test[0, :, :, 0],pred_patches[0,:,:,0])
         pred_image = recompose_overlap(pred_patches, patch_height, patch_width, stride_height, stride_width,
                                      n_h, n_w, num_image, 584, 565)
     else:
         patches_img_test, n_h, n_w, num_image = loader.get_data_testing(
             original_image_path=test_original_image, patch_height=patch_height, patch_width=patch_width)
-        model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
-        model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
+        # model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
+        model = get_unet_model(patch_height, patch_width, 1)
+        # model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
         pred_patches = model.predict(patches_img_test, batch_size=32, verbose=2)
         pred_image = recompose(pred_patches, patch_height, patch_width, n_h, n_w, num_image, 584, 565)
 
     ground_truth = load_hdf5(test_ground_truth)
-    pred_image = pred_image
+    pred_image = ground_truth
     original_image = load_hdf5(test_original_image)
     border_mask = load_hdf5(test_border_mask)
 

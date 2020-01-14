@@ -49,11 +49,11 @@ def evaluate_metric(y_true, y_score, original_image, mask, threshold, path_exper
     :return:
     """
     true_image = np.repeat(y_true, 3, axis=-1)
-    true_image[:, :, :, :][true_image >= 0.5] = 255
-    true_image[:, :, :, :][true_image < 0.5] = 0
+    true_image[:, :, :, :][true_image >= threshold] = 255
+    true_image[:, :, :, :][true_image < threshold] = 0
     score_image = np.repeat(y_score, 3, axis=-1)
-    score_image[:, :, :, :][score_image >= 0.5] = 255
-    score_image[:, :, :, :][score_image < 0.5] = 0
+    score_image[:, :, :, :][score_image >= threshold] = 255
+    score_image[:, :, :, :][score_image < threshold] = 0
     score_image = score_image*mask
     image_data = np.concatenate((np.concatenate(original_image[0:5].astype(np.uint8), axis=1),
                                  np.concatenate(true_image[0:5].astype(np.uint8), axis=1),
