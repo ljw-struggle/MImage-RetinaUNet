@@ -30,14 +30,14 @@ def train(config):
         patch_height=patch_height, patch_width=patch_width, num_patch=num_patch, inside_FOV=inside_FOV)
 
     model = get_unet_model(patch_height, patch_width, 1)
-    with open('./result/' + name_experiment + '/architecture.json', 'w') as file:
-        file.write(model.to_json())
 
     check_pointer = ModelCheckpoint(filepath='./result/' + name_experiment + '/best_weights.h5',
                                     verbose=1, monitor='val_loss', save_best_only=True, mode='auto')
     lr_drop = LearningRateScheduler(lambda epoch: 0.005 if epoch > 100 else 0.001)
     model.fit(patches_img_train, patches_gt_train, epochs=num_epoch, batch_size=batch_size, shuffle=True,
               validation_split=0.1, verbose=1, callbacks=[check_pointer, lr_drop])
+    with open('./result/' + name_experiment + '/architecture.json', 'w') as file:
+        file.write(model.to_json())
     model.save_weights('./result/' + name_experiment + '/last_weights.h5', overwrite=True)
 
 def test(config):
