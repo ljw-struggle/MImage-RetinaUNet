@@ -18,7 +18,7 @@ class loader(object):
         ground_truths = ground_truths # shape = (-1, 584, 565, 1)
         masks = masks # shape = (-1, 584, 565, 1)
 
-        # 2\ Divide to patches.
+        # 2\ Random generate patches.
         num_patch_per_img = int(num_patch / processed_images.shape[0])
         processed_image_patches, ground_truth_patches = [], []
         for i in range(processed_images.shape[0]):

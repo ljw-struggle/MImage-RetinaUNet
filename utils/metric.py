@@ -60,10 +60,11 @@ def evaluate_metric(y_true, y_score, original_image, mask, threshold, path_exper
                                  np.concatenate(score_image[0:5].astype(np.uint8), axis=1)), axis=0)
     visualize(image_data, path_experiment + '/result_image.png')
 
-    # 1\ Get the masked y_score.
+    # 1\ Flatten the y_true, y_score and Get the masked y_score.
     y_score = y_score[:, :, :, 0]
     y_true = y_true[:, :, :, 0]
     mask = mask[:, :, :, 0]
+
     new_y_score = []
     new_y_true = []
     for i in range(y_true.shape[0]):
