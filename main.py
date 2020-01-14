@@ -4,7 +4,7 @@ import os, configparser, argparse, random
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from model import get_unet_model
 from loader import loader
-from utils import load_hdf5, recompose, evaluate_metric
+from utils import recompose, evaluate_metric
 
 random.seed(10)
 
@@ -18,14 +18,13 @@ def train(config):
     num_patch            = config.getint('Train Setting', 'num_patch')
     num_epoch            = config.getint('Train Setting', 'num_epoch')
     batch_size           = config.getint('Train Setting', 'batch_size')
-    inside_FOV           = config.getboolean('Train Setting', 'inside_FOV')
 
     if not os.path.exists('./result/' + name_experiment):
         os.makedirs('./result/' + name_experiment, exist_ok=False)
 
     patches_img_train, patches_gt_train = loader.get_data_training(
         original_image_path=train_original_image, ground_truth_path=train_ground_truth, border_mask_path=train_border_mask,
-        patch_height=patch_height, patch_width=patch_width, num_patch=num_patch, inside_FOV=inside_FOV)
+        patch_height=patch_height, patch_width=patch_width, num_patch=num_patch, inside_mask=True)
 
     model = get_unet_model(patch_height, patch_width, 1)
 
@@ -59,10 +58,9 @@ def test(config):
     pred_image = recompose(pred_patches, patch_height, patch_width, stride_height, stride_width,
                                  n_h, n_w, num_image, 584, 565)
 
-    ground_truth = load_hdf5(test_ground_truth)
-    pred_image = pred_image
-    original_image = load_hdf5(test_original_image)
-    border_mask = load_hdf5(test_border_mask)
+    original_image = loader.load_hdf5(test_original_image)
+    ground_truth = loader.load_hdf5(test_ground_truth)
+    border_mask = loader.load_hdf5(test_border_mask)
     evaluate_metric(ground_truth, pred_image, original_image, border_mask,
                     threshold=0.5, path_experiment='./result/' + name_experiment)
 

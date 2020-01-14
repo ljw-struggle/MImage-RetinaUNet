@@ -7,7 +7,7 @@ import numpy as np
 class loader(object):
     @classmethod
     def get_data_training(self, original_image_path, ground_truth_path, border_mask_path,
-                          patch_height, patch_width, num_patch, inside_FOV=False):
+                          patch_height, patch_width, num_patch, inside_mask=False):
         original_images = self.load_hdf5(original_image_path) # shape = (-1, 584, 565, 3)
         ground_truths = self.load_hdf5(ground_truth_path) # shape = (-1, 584, 565, 1)
         masks = self.load_hdf5(border_mask_path) # shape = (-1, 584, 565, 1)
@@ -24,7 +24,7 @@ class loader(object):
             for k in range(num_patch_per_img):
                 y_ = random.randint(0, 584 - patch_height)
                 x_ = random.randint(0, 565 - patch_width)
-                if inside_FOV:
+                if inside_mask:
                     if masks[i, y_, x_, 0]==0 or masks[i, y_+patch_height, x_+patch_width, 0]==0 or \
                        masks[i, y_, x_, 0]==0 or masks[i, y_+patch_height, x_+patch_width, 0]==0:
                         continue

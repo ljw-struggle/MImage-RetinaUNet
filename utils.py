@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
-import h5py
 import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score, roc_curve, precision_recall_curve, \
     confusion_matrix, jaccard_score, f1_score
 from matplotlib import pyplot as plt
 from PIL import Image
-
-def load_hdf5(in_file):
-    with h5py.File(in_file, 'r') as file:
-        return file['data'][()]
 
 def recompose(preds, patch_h, patch_w, stride_h, stride_w, n_h, n_w,
                       num_image=20, full_height=584, full_width=565):
@@ -30,9 +25,8 @@ def evaluate_metric(y_true, y_score, original_image, mask, threshold, path_exper
     :param y_score: shape = (-1, 584, 565, 1)
     :param original_image: shape = (-1, 584, 565, 3)
     :param mask: shape = (-1, 584, 565, 1)
-    :param threshold:
-    :param path_experiment:
-    :return:
+    :param threshold: threshold
+    :param path_experiment: path of experiment.
     """
     true_image = np.repeat(y_true, 3, axis=-1)
     true_image[:, :, :, :][true_image >= threshold] = 255
