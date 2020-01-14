@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import cv2
 import random
-from utils.utils import *
 import numpy as np
+from utils.utils import *
+from PIL import Image
 
 class loader(object):
     @classmethod
@@ -105,16 +106,16 @@ class loader(object):
         images_equalized = np.empty(images_normalized.shape)
         CLAHE = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         for i in range(images_normalized.shape[0]):
-            images_equalized[i, 0] = CLAHE.apply(np.array(images_normalized[i, 0], dtype=np.uint8))
+            images_equalized[i,:,:,0] = CLAHE.apply(np.array(images_normalized[i,:,:,0], dtype=np.uint8))
 
         # 4\ Adjust Gamma
         images_lut = np.empty(images_equalized.shape)
         inverse_gamma = 1.0 / gamma
         table = np.array([((i / 255.0) ** inverse_gamma) * 255 for i in np.arange(256)]).astype('uint8')
         for i in range(images_equalized.shape[0]):
-            images_lut[i, 0] = cv2.LUT(np.array(images_equalized[i, 0], dtype=np.uint8), table)
+            images_lut[i,:,:, 0] = cv2.LUT(np.array(images_equalized[i,:,:, 0], dtype=np.uint8), table)
 
         # 5\ Change [0, 255] to [0, 1].
-        train_images = images_lut/255.
+        train_images = images_lut/255
 
         return train_images

@@ -32,7 +32,6 @@ def train(config):
     model = get_unet_model(patch_height, patch_width, 1)
     with open('./result/' + name_experiment + '/architecture.json', 'w') as file:
         file.write(model.to_json())
-    # plot(model, to_file='./result/' + name_experiment + '/model.png')
 
     check_pointer = ModelCheckpoint(filepath='./result/' + name_experiment + '/best_weights.h5',
                                     verbose=1, monitor='val_loss', save_best_only=True, mode='auto')
