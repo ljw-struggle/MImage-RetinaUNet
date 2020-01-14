@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 import cv2
+import h5py
 import random
-from utils.utils import *
+import numpy as np
 
 class loader(object):
     @classmethod
     def get_data_training(self, original_image_path, ground_truth_path, border_mask_path,
                           patch_height, patch_width, num_patch, inside_FOV=False):
-        original_images = load_hdf5(original_image_path) # shape = (-1, 584, 565, 3)
-        ground_truths = load_hdf5(ground_truth_path) # shape = (-1, 584, 565, 1)
-        masks = load_hdf5(border_mask_path) # shape = (-1, 584, 565, 1)
+        original_images = self.load_hdf5(original_image_path) # shape = (-1, 584, 565, 3)
+        ground_truths = self.load_hdf5(ground_truth_path) # shape = (-1, 584, 565, 1)
+        masks = self.load_hdf5(border_mask_path) # shape = (-1, 584, 565, 1)
 
         # 1\ Processing
         processed_images = self.preprocess(original_images) # shape = (-1, 584, 565, 1)
@@ -36,7 +37,7 @@ class loader(object):
 
     @classmethod
     def get_data_testing(self, original_image_path, patch_height, patch_width):
-        original_images = load_hdf5(original_image_path) # shape = (-1, 584, 565, 3)
+        original_images = self.load_hdf5(original_image_path) # shape = (-1, 584, 565, 3)
 
         # 1\ Processing
         processed_images = self.preprocess(original_images) # shape = (-1, 584, 565, 1)
@@ -62,7 +63,7 @@ class loader(object):
 
     @classmethod
     def get_data_testing_overlap(self, original_image_path, patch_height, patch_width, stride_height, stride_width):
-        original_images = load_hdf5(original_image_path) # shape = (-1, 584, 565, 3)
+        original_images = self.load_hdf5(original_image_path) # shape = (-1, 584, 565, 3)
 
         # 1\ Processing
         processed_images = self.preprocess(original_images) # shape = (-1, 584, 565, 1)
@@ -85,6 +86,11 @@ class loader(object):
                                                        w*stride_width:w*stride_width+patch_width, :]
                     processed_image_patches.append(processed_image_patch)
         return np.array(processed_image_patches), num_patch_height, num_patch_width, original_images.shape[0]
+
+    @staticmethod
+    def load_hdf5(in_file):
+        with h5py.File(in_file, 'r') as file:
+            return file['data'][()]
 
     @staticmethod
     def preprocess(data, gamma=1.2):

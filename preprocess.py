@@ -2,6 +2,8 @@
 import os
 import h5py
 import numpy as np
+import matplotlib.pyplot as plt
+from skimage import morphology,data,color
 from PIL import Image
 from tqdm import tqdm
 
@@ -9,7 +11,22 @@ def write_hdf5(data, out_file):
     with h5py.File(out_file, 'w') as file:
         file.create_dataset('data', data=data, dtype=data.dtype)
 
-def get_data(original_image_dir, ground_truth_dir, border_mask_dir):
+def skeletonize():
+    image=color.rgb2gray(data.horse())
+    image=1-image # Invert
+    skeleton =morphology.skeletonize(image)
+
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(8, 4))
+    ax1.imshow(image, cmap=plt.cm.get_cmap('gray'))
+    ax1.set_title('original', fontsize=15)
+    ax1.axis('off')
+    ax2.imshow(skeleton, cmap=plt.cm.get_cmap('gray'))
+    ax2.set_title('skeleton', fontsize=15)
+    ax2.axis('off')
+    fig.tight_layout()
+    plt.show()
+
+def process_data(original_image_dir, ground_truth_dir, border_mask_dir):
     original_images = []
     ground_truths = []
     border_masks = []
@@ -52,7 +69,7 @@ if __name__ == '__main__':
         os.makedirs(preprocessed_dir)
 
     # 2\ Save train data.
-    train_original_image, train_ground_truth, train_border_mask = get_data(
+    train_original_image, train_ground_truth, train_border_mask = process_data(
         train_original_image_dir, train_ground_truth_dir, train_border_mask_dir)
     write_hdf5(train_original_image, preprocessed_dir + 'DRIVE_train_original_image.hdf5')
     write_hdf5(train_ground_truth, preprocessed_dir + 'DRIVE_train_ground_truth.hdf5')
@@ -60,7 +77,7 @@ if __name__ == '__main__':
     print('There are {} images for training.'.format(len(train_original_image), ))
 
     # 3\ Save test data.
-    test_original_image, test_ground_truth, test_border_mask = get_data(
+    test_original_image, test_ground_truth, test_border_mask = process_data(
         test_original_image_dir, test_ground_truth_dir, test_border_mask_dir)
     write_hdf5(test_original_image, preprocessed_dir + 'DRIVE_test_original_image.hdf5')
     write_hdf5(test_ground_truth, preprocessed_dir + 'DRIVE_test_ground_truth.hdf5')

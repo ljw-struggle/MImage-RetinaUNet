@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import h5py
 import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score, roc_curve, precision_recall_curve, \
     confusion_matrix, jaccard_score, f1_score
@@ -36,6 +37,23 @@ def write_metric(str, path_experiment):
 def visualize(data, filename):
     img = Image.fromarray(data)
     img.save(filename)
+
+def load_hdf5(in_file):
+    with h5py.File(in_file, 'r') as file:
+        return file['data'][()]
+
+def recompose(preds, patch_h, patch_w, stride_h, stride_w, n_h, n_w,
+                      num_image=20, full_height=584, full_width=565):
+    full_prob = np.zeros((num_image, patch_h+stride_h*(n_h-1), patch_w+stride_w*(n_w-1), 1))
+    full_sum = np.zeros((num_image, patch_h+stride_h*(n_h-1), patch_w+stride_w*(n_w-1), 1))
+
+    for i in range(num_image):
+        for h in range(n_h):
+            for w in range(n_w):
+                full_prob[i, h*stride_h:(h*stride_h)+patch_h,w*stride_w:(w*stride_w)+patch_w]+=preds[i*n_h*n_w+h*n_w+w]
+                full_sum[i, h*stride_h:(h*stride_h)+patch_h,w*stride_w:(w*stride_w)+patch_w]+=1
+
+    return (full_prob/full_sum)[:, 0:full_height, 0:full_width, :]
 
 def evaluate_metric(y_true, y_score, original_image, mask, threshold, path_experiment):
     """

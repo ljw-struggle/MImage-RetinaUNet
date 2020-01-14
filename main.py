@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-import os, configparser, argparse
+import os, configparser, argparse, random
+
 from tensorflow.keras.models import model_from_json
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
-from model.unet_func import get_unet_model
-from utils.loader import *
-from utils.utils import *
-from utils.metric import *
+from model import get_unet_model
+from loader import loader
+from utils import load_hdf5, recompose, evaluate_metric
 
 random.seed(10)
 
@@ -35,6 +35,7 @@ def train(config):
     lr_drop = LearningRateScheduler(lambda epoch: 0.0005 if epoch > 100 else 0.001)
     model.fit(patches_img_train, patches_gt_train, epochs=num_epoch, batch_size=batch_size, shuffle=True,
               validation_split=0.1, verbose=1, callbacks=[check_pointer, lr_drop])
+
     with open('./result/' + name_experiment + '/architecture.json', 'w') as file:
         file.write(model.to_json())
     model.save_weights('./result/' + name_experiment + '/last_weights.h5', overwrite=True)
@@ -53,11 +54,12 @@ def test(config):
     patches_img_test, n_h, n_w, num_image = loader.get_data_testing_overlap(
         original_image_path=test_original_image, patch_height=patch_height,
         patch_width=patch_width, stride_height=stride_height, stride_width=stride_width)
+
     # model = model_from_json(open('./result/' + name_experiment + '/architecture.json').read())
     model = get_unet_model(patch_height, patch_width, 1)
     model.load_weights('./result/' + name_experiment + '/' + best_last + '_weights.h5')
+
     pred_patches = model.predict(patches_img_test, batch_size=32, verbose=1)
-    print(patches_img_test[0, :, :, 0],pred_patches[0,:,:,0])
     pred_image = recompose(pred_patches, patch_height, patch_width, stride_height, stride_width,
                                  n_h, n_w, num_image, 584, 565)
 
@@ -65,7 +67,6 @@ def test(config):
     pred_image = pred_image
     original_image = load_hdf5(test_original_image)
     border_mask = load_hdf5(test_border_mask)
-
     evaluate_metric(ground_truth, pred_image, original_image, border_mask,
                     threshold=0.5, path_experiment='./result/' + name_experiment)
 
