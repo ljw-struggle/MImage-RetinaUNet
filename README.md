@@ -1,7 +1,8 @@
 # UNet for Retina Vessel Segmentation
 
 UNet for retina vessel segmentation.
-<img href='./result/sample.png' width='50%'/>
+
+<img src='./result/sample.png' width='80%'/>
 
 ## Usage
 We run the code on Ubuntu 18.04 LTS with a GTX 1080ti GPU.
@@ -39,18 +40,18 @@ CUDA_VISIBLE_DEVICES=0 python main.py -e test -c ./config/config_0.ini
 ## Result
 | Metric | Value |
 | :----: | :----: |
-| Area under ROC curve | 0.9791076715589634 |
-| Area under PR curve | 0.9096035722442897 |
+| *Area under ROC curve* | 0.9791076715589634 |
+| *Area under PR curve* | 0.9096035722442897 |
 
 For threshold: 0.5
 
 | Metric | Value |
 | :----: | :----: |
-| Jaccard similarity score | 0.6899763444446503
-| F1 score (F-measure) | 0.8165514821704634
-| Accuracy | 0.9557572337407614
-| Precision | 0.8645987922457612
-| Recall | 0.7735631845636364
+| *Jaccard similarity score* | 0.6899763444446503
+| *F1 score (F-measure)* | 0.8165514821704634
+| *Accuracy* | 0.9557572337407614
+| *Precision* | 0.8645987922457612
+| *Recall* | 0.7735631845636364
 
 
 ## REFERENCE
