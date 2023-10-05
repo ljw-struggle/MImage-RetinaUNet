@@ -1,0 +1,9 @@
+Area under ROC curve: 0.9791076715589634
+Area under PR curve: 0.9096035722442897
+
+For threshold: 0.5
+Jaccard similarity score: 0.6899763444446503
+F1 score (F-measure): 0.8165514821704634
+Accuracy: 0.9557572337407614
+Precision: 0.8645987922457612
+Recall: 0.7735631845636364

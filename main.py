@@ -27,7 +27,6 @@ def train(config):
     patches_img_train, patches_gt_train = loader.get_data_training(
         original_image_path=train_original_image, ground_truth_path=train_ground_truth, border_mask_path=train_border_mask,
         patch_height=patch_height, patch_width=patch_width, num_patch=num_patch, inside_mask=False)
-    exit(0)
     model = get_unet_model(patch_height, patch_width, 1)
 
     check_pointer = ModelCheckpoint(filepath='./result/' + name_experiment + '/best_weights.h5',
